@@ -69,7 +69,27 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set) -> tuple
     return summary, ok, fail
 
 
+def health_check(sources: list) -> int:
+    """健康检查：逐源探测（不写状态、不发通知）+ 发送测试邮件验证通路。"""
+    lines: list[str] = []
+    ok = 0
+    for src in sources:
+        try:
+            updates = src.check()
+            lines.append(f"{src.key:<22} 正常，在场 {len(updates)} 条")
+            ok += 1
+        except Exception as e:
+            lines.append(f"{src.key:<22} 异常: {type(e).__name__}: {e}"[:150])
+    sent = email.send_test(lines)
+    print(f"数据源健康: {ok}/{len(sources)} 正常")
+    print("测试邮件:", "已发送（查收邮箱/微信）" if sent else "发送失败")
+    return 0 if sent else 1
+
+
 def main() -> None:
+    if "--test-email" in sys.argv:
+        sys.exit(health_check(build_sources()))
+
     loop_minutes = 0
     if "--loop" in sys.argv:
         i = sys.argv.index("--loop")

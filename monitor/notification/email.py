@@ -83,3 +83,20 @@ def send_alert(subject: str, body: str) -> bool:
         print(f"    [ALERT·本地模式] {subject} | {body[:120]}")
         return True
     return _smtp_send(subject, body)
+
+
+def send_test(source_lines: list[str]) -> bool:
+    """健康检查测试邮件：验证 Actions → SMTP → 邮箱（微信）整条链路。"""
+    from datetime import datetime, timezone
+    subject = "【监测系统】测试邮件 — 通路正常"
+    body = "\n".join([
+        "这是一封测试邮件。", "",
+        f"发送时间: {datetime.now(timezone.utc):%Y-%m-%d %H:%M:%S UTC}",
+        "收到即说明 GitHub Actions → SMTP → 邮箱（微信提醒）链路正常。", "",
+        "各数据源当前健康快照：",
+        *(f"  {line}" for line in source_lines),
+    ])
+    if not _configured():
+        print(f"[EMAIL·本地模式] {subject}\n{body}")
+        return True
+    return _smtp_send(subject, body)

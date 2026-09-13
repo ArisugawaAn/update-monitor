@@ -4,6 +4,15 @@ on:
   schedule:
     - cron: "*/5 * * * *"   # 目标约 5 分钟一查；实际触发时间受 GitHub 调度影响可能有延迟
   workflow_dispatch:          # 支持手动触发（首次上线/排障用）
+    inputs:
+      mode:
+        description: "normal=常规检查 / test-email=健康检查+测试邮件"
+        required: false
+        default: "normal"
+        type: choice
+        options:
+          - normal
+          - test-email
 
 permissions:
   contents: write             # 用于回写 monitor_state.json
@@ -31,6 +40,7 @@ jobs:
         run: python -m pytest tests/ -q
 
       - name: Run monitor
+        if: ${{ github.event.inputs.mode != 'test-email' }}
         env:
           IG_COOKIE: ${{ secrets.IG_COOKIE }}
           SMTP_HOST: smtp.qq.com
@@ -39,6 +49,17 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           NOTIFY_TO: ${{ secrets.NOTIFY_TO }}
         run: python -m monitor.main
+
+      - name: Health check + test email
+        if: ${{ github.event.inputs.mode == 'test-email' }}
+        env:
+          IG_COOKIE: ${{ secrets.IG_COOKIE }}
+          SMTP_HOST: smtp.qq.com
+          SMTP_PORT: "465"
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          NOTIFY_TO: ${{ secrets.NOTIFY_TO }}
+        run: python -m monitor.main --test-email
 
       - name: Commit state
         run: |

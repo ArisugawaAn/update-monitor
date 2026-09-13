@@ -26,6 +26,9 @@ Optional: `NOTIFY_TITLE_PREFIX` — prefix used in notification email subjects.
 ## Operations
 
 - **Run once manually**: Actions → monitor → Run workflow
+- **Verify the pipeline (health check)**: Actions → Run workflow → mode:
+  `test-email` — probes every source and sends a test email; use it any time
+  you want to confirm the email path works
 - **Pause**: Actions → monitor → `···` → Disable workflow
 - **Refresh Instagram session**: update the `IG_COOKIE` secret value
 - **Change sources/accounts**: edit `monitor/config.py` and push
