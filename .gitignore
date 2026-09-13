@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+ig_cookies.txt
+session-*
+watch_state.json
+*.log
