@@ -26,6 +26,8 @@ X_MIRRORS = [  # 按优先级排列；twiiit 为 302 轮换兜底
     "https://nitter.netbub.com",
     "https://twiiit.com",
 ]
+# 最后兜底：公开代抓服务（它的服务器出口，绕开对数据中心 IP 的封锁；免费 20 次/分钟）
+X_PROXY = "https://r.jina.ai"
 
 # ---- YouTube（官方频道 RSS，无账号） --------------------------------------
 YOUTUBE_CHANNELS = [

@@ -1,6 +1,9 @@
 """X 源（已 POC 验证）：nitter 公共镜像 RSS，完全无账号。
 
-镜像按优先级轮试，全部失败才报错（不影响其他来源）。
+候选链（按序轮试，全部失败才报错）：
+  1. 直接镜像（RSS 阅读器 UA）
+  2. 经 r.jina.ai 免费代抓同一批镜像 —— Actions 的数据中心 IP 被镜像
+     Cloudflare 拦截时的兜底（jina 从自己的服务器出口访问）
 """
 import re
 from email.utils import parsedate_to_datetime
@@ -12,30 +15,44 @@ from monitor import config
 from monitor.models import SourceError, Update
 
 
+def _candidates():
+    out = []
+    for mirror in config.X_MIRRORS:
+        out.append((f"{mirror}/{config.X_USER}/rss", f"direct:{mirror}",
+                    {"User-Agent": config.X_UA}, 15))
+    for mirror in config.X_MIRRORS:
+        out.append((f"{config.X_PROXY}/{mirror}/{config.X_USER}/rss", f"jina:{mirror}",
+                    {"User-Agent": config.BROWSER_UA}, 45))
+    return out
+
+
 def _fetch_entries() -> tuple[list, list[str]]:
     errors: list[str] = []
-    for mirror in config.X_MIRRORS:
-        url = f"{mirror}/{config.X_USER}/rss"
+    for url, label, headers, timeout in _candidates():
         try:
-            r = requests.get(url, timeout=15, headers={"User-Agent": config.X_UA})
+            r = requests.get(url, timeout=timeout, headers=headers)
         except Exception as e:
-            errors.append(f"{mirror}: {type(e).__name__}")
+            errors.append(f"{label}: {type(e).__name__}")
             continue
         if r.status_code != 200:
-            errors.append(f"{mirror}: HTTP {r.status_code}")
+            errors.append(f"{label}: HTTP {r.status_code}")
             continue
-        feed = feedparser.parse(r.content)
+        text = r.text
+        idx = text.find("<?xml")  # jina 返回值可能带前导说明，截取 XML 本体
+        if idx > 0:
+            text = text[idx:]
+        feed = feedparser.parse(text)
         if feed.bozo and not feed.entries:
-            errors.append(f"{mirror}: 解析失败")
+            errors.append(f"{label}: 解析失败")
             continue
         if "not yet whitelisted" in (feed.feed.get("title") or ""):
-            errors.append(f"{mirror}: RSS 白名单未批")
+            errors.append(f"{label}: RSS 白名单未批")
             continue
         if not feed.entries:
-            errors.append(f"{mirror}: 空 feed")
+            errors.append(f"{label}: 空 feed")
             continue
         return list(feed.entries), errors
-    raise SourceError("全部镜像失败: " + "; ".join(errors))
+    raise SourceError("全部候选失败: " + "; ".join(errors))
 
 
 def check() -> list[Update]:
