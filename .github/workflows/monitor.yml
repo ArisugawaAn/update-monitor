@@ -46,3 +46,15 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add monitor_state.json
           git diff --cached --quiet || (git commit -m "state update [skip ci]" && git push)
+
+      - name: Daily heartbeat
+        run: |
+          AGE=$(( $(date +%s) - $(git log -1 --format=%ct) ))
+          if [ $AGE -gt 86400 ]; then
+            date -u +"last active: %Y-%m-%dT%H:%M:%SZ" > .heartbeat
+            git add .heartbeat
+            git commit -m "heartbeat [skip ci]"
+            git push
+          else
+            echo "last commit ${AGE}s ago — no heartbeat needed"
+          fi
