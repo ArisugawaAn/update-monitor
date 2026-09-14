@@ -204,6 +204,7 @@ def test_two_tick_source_skips_alternate_rounds(monkeypatch):
 def test_twelve_tick_source_checks_every_12_rounds(monkeypatch):
     """60 分钟源（每 12 轮查一次）：11 轮跳过，第 12 轮查。"""
     from monitor import config, main as m
+    _no_save(monkeypatch)
     monkeypatch.setattr(config, "HOUR_ALIGNED_SOURCES", set())  # 本测试验证 tick 路径（整点对齐另行覆盖）
     state = _tick_state({"site_miyamoto": 100})
     src, calls = _fake_src("site_miyamoto")
@@ -293,6 +294,7 @@ def test_fail_streak_accumulates_across_rounds_and_alerts_once(monkeypatch):
 def test_skip_round_does_not_touch_fail_streak(monkeypatch):
     """跳过轮不计入连续失败：不发请求、不动 streak。"""
     from monitor import config, main as m
+    _no_save(monkeypatch)
     monkeypatch.setattr(config, "HOUR_ALIGNED_SOURCES", set())  # 本测试验证 tick 路径（整点对齐另行覆盖）
     state = _tick_state({"site_miyamoto": 100})
     st.set_fail_streak(state, "site_miyamoto", 3)
