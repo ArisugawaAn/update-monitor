@@ -30,27 +30,33 @@ def build_sources() -> list:
 
 
 def run_once(sources: list, state: dict, counters: dict, disabled: set,
-             now: float | None = None) -> tuple[list[tuple[str, str]], int, int]:
+             now: float | None = None, tick: int | None = None) -> tuple[list[tuple[str, str]], int, int]:
     """返回 (摘要, 成功源数, 失败源数)。全部失败时 main 以非零退出，让 CI 可见。
 
-    频率控制：按 state[last_checked_at] 判断是否到期，未到期直接跳过（不发
-    HTTP 请求、不更新 last_checked_at、不计入成功/失败）。
+    频率控制（按轮次，不受 Actions 调度延迟漂移影响）：每轮 Action = 1 tick，
+    5 分钟源每轮查，10 分钟源隔 1 轮查，60 分钟源每 12 轮查。未到轮次直接跳过
+    （不发 HTTP 请求、不更新 last_checked_tick、不计入成功/失败/连续失败）。
+    连续失败计数持久化在 state[fail_streak]，跨进程累计，成功清零。
+    counters 参数保留兼容（本地调试可读），实际以 state 为准。
     """
     summary: list[tuple[str, str]] = []
     ok = 0
     fail = 0
     now_ts = _now_ts() if now is None else now
+    cur_tick = st.get_tick(state) if tick is None else tick
     for src in sources:
         if src.key in disabled:  # checkpoint 后本轮剩余时间不再请求
             summary.append((src.key, "已停用（等待 checkpoint 处理）"))
             fail += 1
             continue
-        interval = config.check_interval_minutes(src.key)
-        if not st.is_due(state, src.key, interval, now_ts):
-            summary.append((src.key, f"跳过（未到时间，间隔 {interval} 分钟）"))
+        interval_ticks = config.check_interval_ticks(src.key)
+        interval_min = config.check_interval_minutes(src.key)
+        if not st.is_due_tick(state, src.key, interval_ticks, cur_tick):
+            summary.append((src.key, f"跳过（未到轮次，间隔 {interval_min} 分钟/每 {interval_ticks} 轮）"))
             continue
-        # 只有实际发起 HTTP 请求后才更新 last_checked_at（含失败轮次，
+        # 只有实际发起 HTTP 请求后才更新 last_checked_tick（含失败轮次，
         # 否则失败源会每轮重试，突破频率限制）。
+        st.set_last_checked_tick(state, src.key, cur_tick)
         st.set_last_checked_at(state, src.key, now_ts)
         st.save_state(config.STATE_FILE, state)
         try:
@@ -62,16 +68,19 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
             fail += 1
             continue
         except Exception as e:
-            counters[src.key] = counters.get(src.key, 0) + 1
-            n = counters[src.key]
+            n = st.get_fail_streak(state, src.key) + 1  # 跨轮持久化累计
+            st.set_fail_streak(state, src.key, n)
+            st.save_state(config.STATE_FILE, state)
+            counters[src.key] = n
             note = f"失败 x{n}: {type(e).__name__}: {e}"[:140]
             if n == config.ALERT_THRESHOLD:  # 恰好跨过阈值时报警一次
-                email.send_alert(f"【监测报警】{src.key} 连续 {n} 轮失败", f"{type(e).__name__}: {e}")
+                email.send_alert(f"【监测报警】{src.key} 连续 {n} 次检查失败", f"{type(e).__name__}: {e}")
             summary.append((src.key, note))
             fail += 1
             continue
 
         ok += 1
+        st.set_fail_streak(state, src.key, 0)  # 成功清零
         counters[src.key] = 0
         notify_list, baseline = st.diff_new(state, src.key, updates)
         st.save_state(config.STATE_FILE, state)
@@ -115,12 +124,15 @@ def main() -> None:
 
     sources = build_sources()
     state = st.load_state(config.STATE_FILE)
-    counters: dict = {}
+    counters: dict = {k: st.get_fail_streak(state, k) for k in
+                      [s.key for s in sources]}  # 从持久化恢复（跨轮累计）
     disabled: set = set()
     print(f"监测源: {[s.key for s in sources]}")
     while True:
-        print(f"===== 检查 {datetime.now():%Y-%m-%d %H:%M:%S} =====")
-        summary, ok, fail = run_once(sources, state, counters, disabled)
+        tick = st.advance_tick(state)  # 每轮 +1；CI 回写 state 后下一轮继续累加
+        st.save_state(config.STATE_FILE, state)
+        print(f"===== 检查 {datetime.now():%Y-%m-%d %H:%M:%S}（第 {tick} 轮） =====")
+        summary, ok, fail = run_once(sources, state, counters, disabled, tick=tick)
         for key, msg in summary:
             print(f"  {key:<22} {msg}")
         print(f"  >> 成功 {ok} / 失败 {fail}")
