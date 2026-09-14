@@ -293,3 +293,23 @@ def test_skip_round_does_not_touch_fail_streak(monkeypatch):
     m.run_once([src], state, {}, set(), tick=101)  # 未到轮次
     assert calls["n"] == 0
     assert st.get_fail_streak(state, "site_miyamoto") == 3
+
+
+def test_secondary_x_accounts_registered_every_12_rounds():
+    from monitor import config, main as m
+    from monitor.sources import x_twitter
+    assert config.X_USERS == ["miyamoto_hiroji", "paonews_info",
+                              "hmnews_info", "elekashi_ofcl"]
+    keys = [s.key for s in m.build_sources() if s.key == "x" or s.key.startswith("x_")]
+    assert keys == ["x", "x_paonews_info", "x_hmnews_info", "x_elekashi_ofcl"]
+    assert config.check_interval_ticks("x") == 1  # 主号每轮，不受影响
+    for k in ("x_paonews_info", "x_hmnews_info", "x_elekashi_ofcl"):
+        assert config.check_interval_ticks(k) == 12
+        assert config.check_interval_minutes(k) == 60
+    # 次要号 source_key 独立（去重作用域隔离）；主号旧 key 不变
+    assert x_twitter.source().key == "x"
+    assert x_twitter.source("paonews_info").key == "x_paonews_info"
+    # 次要号候选 URL 指向自己的 handle
+    urls = [u for u, _, _, _ in x_twitter._candidates("paonews_info")]
+    assert urls and all("/paonews_info/rss" in u for u in urls)
+    assert "miyamoto_hiroji" not in " ".join(urls)

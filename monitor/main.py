@@ -22,7 +22,7 @@ def build_sources() -> list:
     from monitor.sources import ig_story, tiktok, websites, x_twitter, youtube
     return [
         ig_story.source(),
-        x_twitter.source(),
+        *[x_twitter.source(user) for user in config.X_USERS],  # 主号在前，每轮查
         *[youtube.source(name, cid) for name, cid in config.YOUTUBE_CHANNELS],
         *[tiktok.source(handle, sec) for handle, sec in config.TIKTOK_ACCOUNTS],
         *[websites.source(*site) for site in websites.SITES],

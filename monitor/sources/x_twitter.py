@@ -15,20 +15,21 @@ from monitor import config
 from monitor.models import SourceError, Update
 
 
-def _candidates():
+def _candidates(user: str | None = None):
+    handle = user or config.X_USER
     out = []
     for mirror in config.X_MIRRORS:
-        out.append((f"{mirror}/{config.X_USER}/rss", f"direct:{mirror}",
+        out.append((f"{mirror}/{handle}/rss", f"direct:{mirror}",
                     {"User-Agent": config.X_UA}, 15))
     for mirror in config.X_MIRRORS:
-        out.append((f"{config.X_PROXY}/{mirror}/{config.X_USER}/rss", f"jina:{mirror}",
+        out.append((f"{config.X_PROXY}/{mirror}/{handle}/rss", f"jina:{mirror}",
                     {"User-Agent": config.BROWSER_UA}, 45))
     return out
 
 
-def _fetch_entries() -> tuple[list, list[str]]:
+def _fetch_entries(user: str | None = None) -> tuple[list, list[str]]:
     errors: list[str] = []
-    for url, label, headers, timeout in _candidates():
+    for url, label, headers, timeout in _candidates(user):
         try:
             r = requests.get(url, timeout=timeout, headers=headers)
         except Exception as e:
@@ -55,8 +56,10 @@ def _fetch_entries() -> tuple[list, list[str]]:
     raise SourceError("全部候选失败: " + "; ".join(errors))
 
 
-def check() -> list[Update]:
-    entries, _ = _fetch_entries()
+def check(user: str | None = None) -> list[Update]:
+    handle = user or config.X_USER
+    key = "x" if handle == config.X_USERS[0] else f"x_{handle}"
+    entries, _ = _fetch_entries(handle)
     out: list[Update] = []
     for e in entries:
         link = e.get("link") or ""
@@ -72,12 +75,15 @@ def check() -> list[Update]:
             except Exception:
                 pub = None
         out.append(Update(
-            source_key="x", platform="x", account_name=f"@{config.X_USER}",
+            source_key=key, platform="x", account_name=f"@{handle}",
             content_type="tweet", external_id=ext, title=title, text=title,
-            url=f"https://x.com/{config.X_USER}/status/{ext}", published_at=pub))
+            url=f"https://x.com/{handle}/status/{ext}", published_at=pub))
     return out
 
 
-def source():
+def source(user: str | None = None):
     from types import SimpleNamespace
-    return SimpleNamespace(key="x", platform="x", check=check)
+    handle = user or config.X_USER
+    key = "x" if handle == config.X_USERS[0] else f"x_{handle}"
+    return SimpleNamespace(key=key, platform="x",
+                           check=lambda: check(handle))

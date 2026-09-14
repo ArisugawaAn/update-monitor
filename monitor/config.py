@@ -19,7 +19,13 @@ IG_ACCOUNTS = [  # (用户名, 用户ID) —— ID 永久不变，POC 已实测
 IG_WEB_APP_ID = "936619743392459"
 
 # ---- X（已 POC 验证，完全无账号） ----------------------------------------
-X_USER = "miyamoto_hiroji"
+X_USERS = [  # 按优先级排列：主号在前；每个账号 = 独立 source（独立去重/频率/报警）
+    "miyamoto_hiroji",  # 最重要：每轮查
+    "paonews_info",     # 次要：每 12 轮（≈60 分钟）查
+    "hmnews_info",
+    "elekashi_ofcl",
+]
+X_USER = X_USERS[0]  # 兼容保留：旧单账号入口默认主号
 X_UA = "Feedfetcher-Google; (+http://www.google.com/feedfetcher.html)"
 X_MIRRORS = [  # 按优先级排列；按顺序尝试，遇到第一个成功的就停止
     "https://nitter.kareem.one",
@@ -52,6 +58,9 @@ TIKTOK_ACCOUNTS = [
 CHECK_INTERVAL_MINUTES = {  # 保留：人类可读的期望 cadence（实际门控用下面的轮次）
     "ig_story": 5,
     "x": 5,
+    "x_paonews_info": 60,
+    "x_hmnews_info": 60,
+    "x_elekashi_ofcl": 60,
     "site_miyamoto": 60,
     "site_ek": 60,
     "site_ekfc": 60,
@@ -63,7 +72,10 @@ DEFAULT_CHECK_INTERVAL_MINUTES = 5  # 未知新源的兜底：保持最高频率
 
 CHECK_INTERVAL_TICKS = {  # 实际门控：每 N 轮查一次
     "ig_story": 1,
-    "x": 1,
+    "x": 1,  # 主号 @miyamoto_hiroji：每轮查，不受次要号影响
+    "x_paonews_info": 12,  # 次要 X 号：每 12 轮（≈60 分钟）查
+    "x_hmnews_info": 12,
+    "x_elekashi_ofcl": 12,
     "site_miyamoto": 12,
     "site_ek": 12,
     "site_ekfc": 12,
