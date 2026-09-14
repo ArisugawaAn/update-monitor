@@ -79,7 +79,7 @@ def health_check(sources: list) -> int:
             lines.append(f"{src.key:<22} 正常，在场 {len(updates)} 条")
             ok += 1
         except Exception as e:
-            lines.append(f"{src.key:<22} 异常: {type(e).__name__}: {e}"[:150])
+            lines.append(f"{src.key:<22} 异常: {type(e).__name__}: {e}"[:600])
     sent = email.send_test(lines)
     print(f"数据源健康: {ok}/{len(sources)} 正常")
     print("测试邮件:", "已发送（查收邮箱/微信）" if sent else "发送失败")
