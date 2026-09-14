@@ -12,8 +12,8 @@
     "3985968352891358956"
    ],
    "baselined": true,
-   "last_checked_at": 1789385166.238605,
-   "last_checked_tick": 90,
+   "last_checked_at": 1789385472.777064,
+   "last_checked_tick": 91,
    "fail_streak": 0
   },
   "x": {
@@ -41,8 +41,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_at": 1789385166.238605,
-   "last_checked_tick": 90,
+   "last_checked_at": 1789385472.777064,
+   "last_checked_tick": 91,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -65,8 +65,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_at": 1789384866.644397,
-   "last_checked_tick": 89,
+   "last_checked_at": 1789385472.777064,
+   "last_checked_tick": 91,
    "fail_streak": 0
   },
   "site_miyamoto": {
@@ -182,8 +182,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_at": 1789384866.644397,
-   "last_checked_tick": 89,
+   "last_checked_at": 1789385472.777064,
+   "last_checked_tick": 91,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -195,8 +195,8 @@
     "count-5"
    ],
    "baselined": true,
-   "last_checked_at": 1789384866.644397,
-   "last_checked_tick": 89,
+   "last_checked_at": 1789385472.777064,
+   "last_checked_tick": 91,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -214,8 +214,8 @@
     "2099438179749335376"
    ],
    "baselined": true,
-   "last_checked_tick": 79,
-   "last_checked_at": 1789381868.74543,
+   "last_checked_tick": 91,
+   "last_checked_at": 1789385472.777064,
    "fail_streak": 0
   },
   "x_hmnews_info": {
@@ -243,8 +243,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 79,
-   "last_checked_at": 1789381868.74543,
+   "last_checked_tick": 91,
+   "last_checked_at": 1789385472.777064,
    "fail_streak": 0
   },
   "x_elekashi_ofcl": {
@@ -272,10 +272,10 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 79,
-   "last_checked_at": 1789381868.74543,
+   "last_checked_tick": 91,
+   "last_checked_at": 1789385472.777064,
    "fail_streak": 0
   }
  },
- "tick": 90
+ "tick": 91
 }
