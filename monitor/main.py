@@ -44,6 +44,10 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
     fail = 0
     now_ts = _now_ts() if now is None else now
     cur_tick = st.get_tick(state) if tick is None else tick
+    hour_first = st.is_new_hour(state, now_ts)  # 自然小时第一次 tick → 全源 sweep
+    if hour_first:
+        st.set_sweep_hour(state, now_ts)  # 请求前记录（与 tick 门控同一取舍）
+        st.save_state(config.STATE_FILE, state)
     for src in sources:
         if src.key in disabled:  # checkpoint 后本轮剩余时间不再请求
             summary.append((src.key, "已停用（等待 checkpoint 处理）"))
@@ -52,17 +56,17 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
         interval_ticks = config.check_interval_ticks(src.key)
         interval_min = config.check_interval_minutes(src.key)
         if config.is_hour_aligned(src.key):
-            # 整点对齐：每自然小时的第一次 tick 执行（≈HH:00，自然顺延不刻意延后）
-            if not st.is_due_hour(state, src.key, now_ts):
-                summary.append((src.key, "跳过（本小时整点轮已检查）"))
+            # 整点对齐源：只在每自然小时的 sweep tick 执行（≈HH:00，自然顺延不刻意延后）
+            if not hour_first:
+                summary.append((src.key, "跳过（等待下一个整点 sweep）"))
                 continue
-        elif not st.is_due_tick(state, src.key, interval_ticks, cur_tick):
+        elif not (hour_first or st.is_due_tick(state, src.key, interval_ticks, cur_tick)):
+            # 非整点对齐源：正常按轮次节奏；但 sweep tick 强制全量访问一次
             summary.append((src.key, f"跳过（未到轮次，间隔 {interval_min} 分钟/每 {interval_ticks} 轮）"))
             continue
         # 只有实际发起 HTTP 请求后才更新门控标记（含失败轮次，
         # 否则失败源会每轮重试，突破频率限制）。
         st.set_last_checked_tick(state, src.key, cur_tick)
-        st.set_last_run_hour(state, src.key, now_ts)
         st.set_last_checked_at(state, src.key, now_ts)
         st.save_state(config.STATE_FILE, state)
         try:

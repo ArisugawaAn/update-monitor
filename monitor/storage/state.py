@@ -130,17 +130,15 @@ def hour_key(ts: float) -> str:
     return datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%dT%H")
 
 
-def is_due_hour(state: dict, key: str, now_ts: float) -> bool:
-    """整点对齐门控：当前小时 ≠ 上次检查小时 → 到期（每自然小时第一次 tick 执行）。
+def is_new_hour(state: dict, now_ts: float) -> bool:
+    """本 tick 是否为当前自然小时的第一次 tick（全局 sweep 信号）。
 
-    从未检查过 → True。与 tick 门控互斥：整点对齐源不走 is_due_tick。
+    sweep 语义：每小时第一次 tick，**所有源**（含 10 分钟源）都强制访问一次；
+    小时内其余 tick 按各自 tick 节奏。整点边界对 UTC/东九/东八完全一致。
     """
-    b = state.get("sources", {}).get(key)
-    if not b:
-        return True
-    return b.get("last_run_hour") != hour_key(now_ts)
+    return state.get("last_sweep_hour") != hour_key(now_ts)
 
 
-def set_last_run_hour(state: dict, key: str, now_ts: float) -> None:
-    """仅在实际发起 HTTP 请求后调用；跳过时不得调用。"""
-    _bucket(state, key)["last_run_hour"] = hour_key(now_ts)
+def set_sweep_hour(state: dict, now_ts: float) -> None:
+    """sweep 发生时记录小时键（必须在发起任何 HTTP 请求前调用）。"""
+    state["last_sweep_hour"] = hour_key(now_ts)

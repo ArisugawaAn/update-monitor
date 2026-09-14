@@ -1,6 +1,7 @@
 """monitor 单元测试：全部 mock，不联网。"""
 import json
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -151,8 +152,13 @@ def _no_save(monkeypatch):
 
 
 def _tick_state(last=None) -> dict:
-    """构造 tick=100 的 state；last 为 {key: last_tick} 预置上次检查轮次。"""
-    state: dict = {"sources": {}, "tick": 100}
+    """构造 tick=100 的 state；last 为 {key: last_tick} 预置上次检查轮次。
+
+    预设 last_sweep_hour = 真实当前小时：让不传 now 的旧测试处于
+    "本小时 sweep 已发生"状态（hour_first=False），按原节奏断言。
+    """
+    state: dict = {"sources": {}, "tick": 100,
+                   "last_sweep_hour": st.hour_key(time.time())}
     for k, t in (last or {}).items():
         st.set_last_checked_tick(state, k, t)
     return state
@@ -316,15 +322,22 @@ def test_secondary_x_accounts_registered_every_12_rounds():
     assert "miyamoto_hiroji" not in " ".join(urls)
 
 
-def test_hour_alignment(tmp_path):
-    now = 1757802000.0  # 固定取某小时的第 20 分钟，避免边界抖动
-    state = _state(tmp_path)
-    assert st.is_due_hour(state, "s", now)            # 从未查过 → 必查
-    st.set_last_run_hour(state, "s", now)
-    assert not st.is_due_hour(state, "s", now + 120)  # 同一自然小时 → 跳过
-    assert st.is_due_hour(state, "s", now + 3700)     # 进入下一自然小时 → 必查
-    st.set_last_run_hour(state, "s", now + 3700)
-    assert not st.is_due_hour(state, "s", now + 4000) # 同一小时 → 跳过
+def test_hour_sweep_forces_all_sources(monkeypatch):
+    """自然小时第一次 tick：所有源（含 10 分钟源）强制访问一次；小时内按各自节奏。"""
+    from monitor import main as m
+    _no_save(monkeypatch)
+    now = 1757802000.0
+    state = _tick_state({})
+    state["last_sweep_hour"] = st.hour_key(now - 3600)  # 置于上一小时 → 本 tick 触发 sweep
+    s_align, c_align = _fake_src("site_miyamoto")
+    s_10m, c_10m = _fake_src("youtube_x")
+    s_1m, c_1m = _fake_src("x")
+    m.run_once([s_align, s_10m, s_1m], state, {}, set(), tick=101, now=now)
+    assert (c_align["n"], c_10m["n"], c_1m["n"]) == (1, 1, 1)      # sweep 全查
+    m.run_once([s_align, s_10m, s_1m], state, {}, set(), tick=102, now=now + 300)
+    assert (c_align["n"], c_10m["n"], c_1m["n"]) == (1, 1, 2)      # 小时内：整点源停、10 分钟源隔轮、每轮源照跑
+    m.run_once([s_align, s_10m, s_1m], state, {}, set(), tick=103, now=now + 3700)
+    assert (c_align["n"], c_10m["n"], c_1m["n"]) == (2, 2, 3)      # 新小时 sweep：再次全查
 
 
 def test_hour_aligned_source_runs_once_per_hour(monkeypatch):
