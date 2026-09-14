@@ -85,6 +85,24 @@ YOUTUBE_CHECK_INTERVAL_TICKS = 2  # youtube_<channel_id> 前缀匹配
 TIKTOK_CHECK_INTERVAL_TICKS = 2  # tiktok_<handle> 前缀匹配
 DEFAULT_CHECK_INTERVAL_TICKS = 1  # 未知新源的兜底：每轮都查
 
+# ---- 整点对齐 --------------------------------------------------------------
+# 这些源不再按"距上次检查满 N 轮"触发，而是**每个自然小时的第一次 tick** 检查：
+# 例如 19:00 起的第一个 tick（受 Actions 调度影响可能自然顺延到 19:01~19:05，
+# 不刻意延后）所有整点源 + 每轮源一起跑完；本小时内后续 tick 跳过。
+HOUR_ALIGNED_SOURCES = {
+    "x_paonews_info",
+    "x_hmnews_info",
+    "x_elekashi_ofcl",
+    "site_miyamoto",
+    "site_ek",
+    "site_ekfc",
+    "site_elephantsinc",
+}
+
+
+def is_hour_aligned(key: str) -> bool:
+    return key in HOUR_ALIGNED_SOURCES
+
 
 def check_interval_minutes(key: str) -> int:
     """返回某 source 的期望检查间隔（分钟，仅展示/兼容用）。精确匹配优先，其次前缀匹配。"""

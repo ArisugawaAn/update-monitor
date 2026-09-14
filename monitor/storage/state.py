@@ -122,3 +122,25 @@ def get_fail_streak(state: dict, key: str) -> int:
 def set_fail_streak(state: dict, key: str, n: int) -> None:
     """持久化连续失败计数（成功时置 0）。"""
     _bucket(state, key)["fail_streak"] = int(n)
+
+
+def hour_key(ts: float) -> str:
+    """自然小时键（UTC 整点边界与东九/东八区一致，均为整小时）。"""
+    from datetime import datetime, timezone
+    return datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%dT%H")
+
+
+def is_due_hour(state: dict, key: str, now_ts: float) -> bool:
+    """整点对齐门控：当前小时 ≠ 上次检查小时 → 到期（每自然小时第一次 tick 执行）。
+
+    从未检查过 → True。与 tick 门控互斥：整点对齐源不走 is_due_tick。
+    """
+    b = state.get("sources", {}).get(key)
+    if not b:
+        return True
+    return b.get("last_run_hour") != hour_key(now_ts)
+
+
+def set_last_run_hour(state: dict, key: str, now_ts: float) -> None:
+    """仅在实际发起 HTTP 请求后调用；跳过时不得调用。"""
+    _bucket(state, key)["last_run_hour"] = hour_key(now_ts)

@@ -197,8 +197,8 @@ def test_two_tick_source_skips_alternate_rounds(monkeypatch):
 
 def test_twelve_tick_source_checks_every_12_rounds(monkeypatch):
     """60 分钟源（每 12 轮查一次）：11 轮跳过，第 12 轮查。"""
-    from monitor import main as m
-    _no_save(monkeypatch)
+    from monitor import config, main as m
+    monkeypatch.setattr(config, "HOUR_ALIGNED_SOURCES", set())  # 本测试验证 tick 路径（整点对齐另行覆盖）
     state = _tick_state({"site_miyamoto": 100})
     src, calls = _fake_src("site_miyamoto")
     for t in range(101, 112):
@@ -215,6 +215,7 @@ def test_twelve_tick_source_checks_every_12_rounds(monkeypatch):
 def test_different_sources_have_different_intervals(monkeypatch):
     from monitor import config, main as m
     _no_save(monkeypatch)
+    monkeypatch.setattr(config, "HOUR_ALIGNED_SOURCES", set())  # 本测试验证 tick 路径（整点对齐另行覆盖）
     assert config.check_interval_ticks("ig_story") == 1
     assert config.check_interval_ticks("x") == 1
     assert config.check_interval_ticks("youtube_UCcUcK64JLSZAPUfG07s-Wew") == 2
@@ -285,8 +286,8 @@ def test_fail_streak_accumulates_across_rounds_and_alerts_once(monkeypatch):
 
 def test_skip_round_does_not_touch_fail_streak(monkeypatch):
     """跳过轮不计入连续失败：不发请求、不动 streak。"""
-    from monitor import main as m
-    _no_save(monkeypatch)
+    from monitor import config, main as m
+    monkeypatch.setattr(config, "HOUR_ALIGNED_SOURCES", set())  # 本测试验证 tick 路径（整点对齐另行覆盖）
     state = _tick_state({"site_miyamoto": 100})
     st.set_fail_streak(state, "site_miyamoto", 3)
     src, calls = _fake_src("site_miyamoto")
@@ -313,3 +314,29 @@ def test_secondary_x_accounts_registered_every_12_rounds():
     urls = [u for u, _, _, _ in x_twitter._candidates("paonews_info")]
     assert urls and all("/paonews_info/rss" in u for u in urls)
     assert "miyamoto_hiroji" not in " ".join(urls)
+
+
+def test_hour_alignment(tmp_path):
+    now = 1757802000.0  # 固定取某小时的第 20 分钟，避免边界抖动
+    state = _state(tmp_path)
+    assert st.is_due_hour(state, "s", now)            # 从未查过 → 必查
+    st.set_last_run_hour(state, "s", now)
+    assert not st.is_due_hour(state, "s", now + 120)  # 同一自然小时 → 跳过
+    assert st.is_due_hour(state, "s", now + 3700)     # 进入下一自然小时 → 必查
+    st.set_last_run_hour(state, "s", now + 3700)
+    assert not st.is_due_hour(state, "s", now + 4000) # 同一小时 → 跳过
+
+
+def test_hour_aligned_source_runs_once_per_hour(monkeypatch):
+    """整点对齐源：每自然小时第一次 tick 执行，小时内后续 tick 跳过。"""
+    from monitor import main as m
+    _no_save(monkeypatch)
+    now = 1757802000.0
+    state = _tick_state({})
+    src, calls = _fake_src("site_miyamoto")
+    m.run_once([src], state, {}, set(), tick=101, now=now)
+    assert calls["n"] == 1
+    m.run_once([src], state, {}, set(), tick=102, now=now + 300)   # 同一小时 → 跳过
+    assert calls["n"] == 1
+    m.run_once([src], state, {}, set(), tick=103, now=now + 3700)  # 下一自然小时 → 再查
+    assert calls["n"] == 2

@@ -51,12 +51,18 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
             continue
         interval_ticks = config.check_interval_ticks(src.key)
         interval_min = config.check_interval_minutes(src.key)
-        if not st.is_due_tick(state, src.key, interval_ticks, cur_tick):
+        if config.is_hour_aligned(src.key):
+            # 整点对齐：每自然小时的第一次 tick 执行（≈HH:00，自然顺延不刻意延后）
+            if not st.is_due_hour(state, src.key, now_ts):
+                summary.append((src.key, "跳过（本小时整点轮已检查）"))
+                continue
+        elif not st.is_due_tick(state, src.key, interval_ticks, cur_tick):
             summary.append((src.key, f"跳过（未到轮次，间隔 {interval_min} 分钟/每 {interval_ticks} 轮）"))
             continue
-        # 只有实际发起 HTTP 请求后才更新 last_checked_tick（含失败轮次，
+        # 只有实际发起 HTTP 请求后才更新门控标记（含失败轮次，
         # 否则失败源会每轮重试，突破频率限制）。
         st.set_last_checked_tick(state, src.key, cur_tick)
+        st.set_last_run_hour(state, src.key, now_ts)
         st.set_last_checked_at(state, src.key, now_ts)
         st.save_state(config.STATE_FILE, state)
         try:
