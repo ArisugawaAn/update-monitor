@@ -73,7 +73,12 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
             updates = src.check()
         except CheckpointError as e:
             disabled.add(src.key)
-            email.send_alert(f"【监测报警】{src.key} 账号需 checkpoint 验证", str(e))
+            if not st.get_alert_flag(state, src.key, "checkpoint"):
+                st.set_alert_flag(state, src.key, "checkpoint")
+                st.save_state(config.STATE_FILE, state)
+                email.send_alert(f"【监测报警】{src.key} 账号需 checkpoint 验证",
+                                 f"{e}\n恢复方法见仓库 README；本事件只报一次，"
+                                 f"源恢复成功后自动重新武装。")
             summary.append((src.key, f"⛔ {e}"))
             fail += 1
             continue
@@ -91,6 +96,7 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
 
         ok += 1
         st.set_fail_streak(state, src.key, 0)  # 成功清零
+        st.clear_alert_flag(state, src.key, "checkpoint")  # 恢复后重新武装报警
         counters[src.key] = 0
         notify_list, baseline = st.diff_new(state, src.key, updates)
         st.save_state(config.STATE_FILE, state)

@@ -124,6 +124,23 @@ def set_fail_streak(state: dict, key: str, n: int) -> None:
     _bucket(state, key)["fail_streak"] = int(n)
 
 
+def get_alert_flag(state: dict, key: str, kind: str) -> bool:
+    """某源某类报警是否已处于"已报警"状态（事件去重用）。"""
+    b = state.get("sources", {}).get(key)
+    return bool(b and b.get("alerts", {}).get(kind))
+
+
+def set_alert_flag(state: dict, key: str, kind: str) -> None:
+    _bucket(state, key).setdefault("alerts", {})[kind] = True
+
+
+def clear_alert_flag(state: dict, key: str, kind: str) -> None:
+    """源恢复成功后解除报警武装，下次故障可再次报警。"""
+    b = state.get("sources", {}).get(key)
+    if b and b.get("alerts", {}).get(kind):
+        b["alerts"][kind] = False
+
+
 def hour_key(ts: float) -> str:
     """自然小时键（UTC 整点边界与东九/东八区一致，均为整小时）。"""
     from datetime import datetime, timezone

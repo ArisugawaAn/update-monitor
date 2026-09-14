@@ -355,3 +355,38 @@ def test_hour_aligned_source_runs_once_per_hour(monkeypatch):
     assert calls["n"] == 1
     m.run_once([src], state, {}, set(), tick=103, now=now + 3700)  # 下一自然小时 → 再查
     assert calls["n"] == 2
+
+
+def test_checkpoint_alert_fires_once_per_incident(monkeypatch):
+    """checkpoint 报警按事件去重：连续异常只发一次，恢复成功后重新武装。"""
+    from monitor import main as m
+    _no_save(monkeypatch)
+    sent = []
+    monkeypatch.setattr(m.email, "send_alert", lambda s, b: sent.append(s) or True)
+    state = _tick_state({})
+
+    class BadSrc:
+        key = "ig_story"
+        platform = "instagram"
+
+        @staticmethod
+        def check():
+            raise m.CheckpointError("需要验证")
+
+    m.run_once([BadSrc()], state, {}, set(), tick=1)
+    m.run_once([BadSrc()], state, {}, set(), tick=2)
+    assert len(sent) == 1  # 同一事件只报一次
+
+    class GoodSrc:
+        key = "ig_story"
+        platform = "instagram"
+
+        @staticmethod
+        def check():
+            return []
+
+    m.run_once([GoodSrc()], state, {}, set(), tick=3)  # 恢复 → 解除武装
+    state["sources"]["ig_story"]["alerts"]["checkpoint"] = False
+
+    m.run_once([BadSrc()], state, {}, set(), tick=4)   # 再次故障 → 再报
+    assert len(sent) == 2
