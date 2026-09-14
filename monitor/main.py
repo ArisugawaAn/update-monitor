@@ -6,12 +6,16 @@
 """
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from monitor import config
 from monitor.models import CheckpointError
 from monitor.notification import email
 from monitor.storage import state as st
+
+
+def _now_ts() -> float:
+    return datetime.now(timezone.utc).timestamp()
 
 
 def build_sources() -> list:
@@ -25,16 +29,30 @@ def build_sources() -> list:
     ]
 
 
-def run_once(sources: list, state: dict, counters: dict, disabled: set) -> tuple[list[tuple[str, str]], int, int]:
-    """返回 (摘要, 成功源数, 失败源数)。全部失败时 main 以非零退出，让 CI 可见。"""
+def run_once(sources: list, state: dict, counters: dict, disabled: set,
+             now: float | None = None) -> tuple[list[tuple[str, str]], int, int]:
+    """返回 (摘要, 成功源数, 失败源数)。全部失败时 main 以非零退出，让 CI 可见。
+
+    频率控制：按 state[last_checked_at] 判断是否到期，未到期直接跳过（不发
+    HTTP 请求、不更新 last_checked_at、不计入成功/失败）。
+    """
     summary: list[tuple[str, str]] = []
     ok = 0
     fail = 0
+    now_ts = _now_ts() if now is None else now
     for src in sources:
         if src.key in disabled:  # checkpoint 后本轮剩余时间不再请求
             summary.append((src.key, "已停用（等待 checkpoint 处理）"))
             fail += 1
             continue
+        interval = config.check_interval_minutes(src.key)
+        if not st.is_due(state, src.key, interval, now_ts):
+            summary.append((src.key, f"跳过（未到时间，间隔 {interval} 分钟）"))
+            continue
+        # 只有实际发起 HTTP 请求后才更新 last_checked_at（含失败轮次，
+        # 否则失败源会每轮重试，突破频率限制）。
+        st.set_last_checked_at(state, src.key, now_ts)
+        st.save_state(config.STATE_FILE, state)
         try:
             updates = src.check()
         except CheckpointError as e:

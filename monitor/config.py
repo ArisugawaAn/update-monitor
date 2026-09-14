@@ -21,10 +21,15 @@ IG_WEB_APP_ID = "936619743392459"
 # ---- X（已 POC 验证，完全无账号） ----------------------------------------
 X_USER = "miyamoto_hiroji"
 X_UA = "Feedfetcher-Google; (+http://www.google.com/feedfetcher.html)"
-X_MIRRORS = [  # 按优先级排列；twiiit 为 302 轮换兜底
+X_MIRRORS = [  # 按优先级排列；按顺序尝试，遇到第一个成功的就停止
     "https://nitter.kareem.one",
-    "https://nitter.netbub.com",
-    "https://twiiit.com",
+    "https://nitter.miningtcup.me",
+    "https://nitter.meowing.monster",
+    "https://nitter.xitter.cc",
+    "https://nitter.jaydenha.uk",
+    "https://nitter.click",
+    "https://x.n0g.xyz",
+    "https://tw.eir-nya.gay",
 ]
 # 最后兜底：公开代抓服务（它的服务器出口，绕开对数据中心 IP 的封锁；免费 20 次/分钟）
 X_PROXY = "https://r.jina.ai"
@@ -40,6 +45,31 @@ YOUTUBE_CHANNELS = [
 TIKTOK_ACCOUNTS = [
     ("miyamoto_hiroji_", "MS4wLjABAAAAI_uFHmmcaJqxDN6W2Ve-FWRXWI3Lovy8-0xEksEXiqG3_htnn6Lnd0zSB7IhQQpN"),
 ]
+
+# ---- 检查频率（分钟）：Cloudflare 仍每 5 分钟触发一次，进程内按 state 限流 ----
+CHECK_INTERVAL_MINUTES = {
+    "ig_story": 5,
+    "x": 5,
+    "site_miyamoto": 60,
+    "site_ek": 60,
+    "site_ekfc": 60,
+    "site_elephantsinc": 60,
+}
+YOUTUBE_CHECK_INTERVAL_MINUTES = 10  # youtube_<channel_id> 前缀匹配
+TIKTOK_CHECK_INTERVAL_MINUTES = 10  # tiktok_<handle> 前缀匹配
+DEFAULT_CHECK_INTERVAL_MINUTES = 5  # 未知新源的兜底：保持最高频率
+
+
+def check_interval_minutes(key: str) -> int:
+    """返回某 source 的检查间隔（分钟）。精确匹配优先，其次前缀匹配。"""
+    if key in CHECK_INTERVAL_MINUTES:
+        return CHECK_INTERVAL_MINUTES[key]
+    if key.startswith("youtube_"):
+        return YOUTUBE_CHECK_INTERVAL_MINUTES
+    if key.startswith("tiktok_"):
+        return TIKTOK_CHECK_INTERVAL_MINUTES
+    return DEFAULT_CHECK_INTERVAL_MINUTES
+
 
 # ---- 故障报警 --------------------------------------------------------------
 ALERT_THRESHOLD = 6  # 同一来源连续失败 N 轮发一封报警（≈30 分钟）

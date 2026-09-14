@@ -43,3 +43,28 @@ def mark_notified(state: dict, key: str, updates: list[Update]) -> None:
     b = _bucket(state, key)
     b["notified"].extend(u.external_id for u in updates)
     del b["notified"][:-SEEN_CAP]
+
+
+def get_last_checked_at(state: dict, key: str) -> float | None:
+    """返回某 source 上次实际发起检查的时间戳（秒）。从未检查返回 None。
+
+    兼容旧 state：缺字段的旧 bucket 返回 None（= 首次运行，必须检查）。
+    """
+    b = state.get("sources", {}).get(key)
+    if not b:
+        return None
+    ts = b.get("last_checked_at")
+    return float(ts) if isinstance(ts, (int, float)) else None
+
+
+def set_last_checked_at(state: dict, key: str, ts: float) -> None:
+    """仅在实际发起 HTTP 请求后调用；跳过时不得调用。"""
+    _bucket(state, key)["last_checked_at"] = float(ts)
+
+
+def is_due(state: dict, key: str, interval_minutes: int, now: float) -> bool:
+    """从未检查过 → True；否则 now - last_checked_at >= interval 才到期。"""
+    last = get_last_checked_at(state, key)
+    if last is None:
+        return True
+    return (now - last) >= interval_minutes * 60

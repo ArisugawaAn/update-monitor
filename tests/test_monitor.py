@@ -128,3 +128,102 @@ def test_hashpage_changes_on_content():
     u3 = websites._parse_hashpage(BeautifulSoup("<html><body>お詫び B</body></html>", "html.parser"), src)
     assert u1[0].external_id == u2[0].external_id
     assert u1[0].external_id != u3[0].external_id  # 内容变化 → 新 ID → 通知
+
+
+# ---------------- 检查频率门控（不发 HTTP 即跳过，基于持久化 state） ----------------
+
+def _fake_src(key, updates=None, fail=False):
+    from types import SimpleNamespace
+    calls = {"n": 0}
+
+    def check():
+        calls["n"] += 1
+        if fail:
+            raise SourceError("boom")
+        return list(updates or [])
+
+    return SimpleNamespace(key=key, check=check), calls
+
+
+def _no_save(monkeypatch):
+    from monitor.storage import state as st_mod
+    monkeypatch.setattr(st_mod, "save_state", lambda path, state: None)
+
+
+def test_first_run_always_checks(monkeypatch):
+    from monitor import main as m
+    _no_save(monkeypatch)
+    state = {"sources": {}}  # 从未检查过，无 last_checked_at
+    src, calls = _fake_src("site_miyamoto")
+    summary, ok, fail = m.run_once([src], state, {}, set(), now=1_000_000.0)
+    assert calls["n"] == 1
+    assert ok == 1 and fail == 0
+    assert "在场" in summary[0][1]
+    assert st.get_last_checked_at(state, "site_miyamoto") == 1_000_000.0
+
+
+def test_due_after_interval_checks(monkeypatch):
+    from monitor import main as m
+    _no_save(monkeypatch)
+    state = {"sources": {}}
+    st.set_last_checked_at(state, "x", 1_000_000.0)
+    src, calls = _fake_src("x")
+    # 间隔 5 分钟：恰好 300 秒后到期
+    summary, ok, _ = m.run_once([src], state, {}, set(), now=1_000_000.0 + 300)
+    assert calls["n"] == 1 and ok == 1
+    assert "跳过" not in summary[0][1]
+
+
+def test_not_due_skips_without_http_and_keeps_timestamp(monkeypatch):
+    from monitor import main as m
+    _no_save(monkeypatch)
+    state = {"sources": {}}
+    st.set_last_checked_at(state, "site_miyamoto", 1_000_000.0)
+    src, calls = _fake_src("site_miyamoto")
+    before = st.get_last_checked_at(state, "site_miyamoto")
+    summary, ok, fail = m.run_once([src], state, {}, set(), now=1_000_000.0 + 5 * 60)
+    assert calls["n"] == 0  # 未发 HTTP 请求
+    assert ok == 0 and fail == 0  # 跳过不计入成功/失败
+    assert "跳过" in summary[0][1]
+    assert st.get_last_checked_at(state, "site_miyamoto") == before  # 跳过不更新时间
+
+
+def test_different_sources_have_different_intervals(monkeypatch):
+    from monitor import config, main as m
+    _no_save(monkeypatch)
+    assert config.check_interval_minutes("ig_story") == 5
+    assert config.check_interval_minutes("x") == 5
+    assert config.check_interval_minutes("youtube_UCcUcK64JLSZAPUfG07s-Wew") == 10
+    assert config.check_interval_minutes("tiktok_miyamoto_hiroji_") == 10
+    assert config.check_interval_minutes("site_miyamoto") == 60
+    assert config.check_interval_minutes("site_ek") == 60
+    assert config.check_interval_minutes("site_ekfc") == 60
+    assert config.check_interval_minutes("site_elephantsinc") == 60
+    # 同一时刻：5 分钟源到期、60 分钟源跳过
+    state = {"sources": {}}
+    st.set_last_checked_at(state, "x", 1_000_000.0)
+    st.set_last_checked_at(state, "site_miyamoto", 1_000_000.0)
+    sx, cx = _fake_src("x")
+    ss, cs = _fake_src("site_miyamoto")
+    summary, ok, _ = m.run_once([sx, ss], state, {}, set(), now=1_000_000.0 + 5 * 60)
+    assert cx["n"] == 1 and cs["n"] == 0
+    assert ok == 1
+    assert "跳过" not in summary[0][1] and "跳过" in summary[1][1]
+
+
+def test_failed_check_still_advances_timestamp(monkeypatch):
+    """失败也算发起过 HTTP：更新 last_checked_at，避免失败源每轮重试突破频率。"""
+    from monitor import main as m
+    _no_save(monkeypatch)
+    state = {"sources": {}}
+    src, calls = _fake_src("x", fail=True)
+    summary, ok, fail = m.run_once([src], state, {}, set(), now=1_000_000.0)
+    assert calls["n"] == 1 and ok == 0 and fail == 1
+    assert "失败" in summary[0][1]
+    assert st.get_last_checked_at(state, "x") == 1_000_000.0
+
+
+def test_old_state_without_timestamp_is_compatible_and_due():
+    state = {"sources": {"x": {"seen": ["1"], "notified": [], "baselined": True}}}
+    assert st.get_last_checked_at(state, "x") is None
+    assert st.is_due(state, "x", 5, 1_000_000.0) is True  # 旧数据首次必须检查
