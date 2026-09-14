@@ -7,7 +7,9 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_at": 1789358492.128375
+   "last_checked_at": 1789358764.143216,
+   "last_checked_tick": 1,
+   "fail_streak": 0
   },
   "x": {
    "seen": [
@@ -34,7 +36,9 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_at": 1789358492.128375
+   "last_checked_at": 1789358764.143216,
+   "last_checked_tick": 1,
+   "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
    "seen": [
@@ -56,7 +60,9 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_at": 1789358492.128375
+   "last_checked_at": 1789358764.143216,
+   "last_checked_tick": 1,
+   "fail_streak": 1
   },
   "site_miyamoto": {
    "seen": [
@@ -73,7 +79,9 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_at": 1789356965.891759
+   "last_checked_at": 1789358764.143216,
+   "last_checked_tick": 1,
+   "fail_streak": 0
   },
   "site_ek": {
    "seen": [
@@ -100,7 +108,9 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_at": 1789356965.891759
+   "last_checked_at": 1789358764.143216,
+   "last_checked_tick": 1,
+   "fail_streak": 0
   },
   "site_ekfc": {
    "seen": [
@@ -127,7 +137,9 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_at": 1789356965.891759
+   "last_checked_at": 1789358764.143216,
+   "last_checked_tick": 1,
+   "fail_streak": 0
   },
   "site_elephantsinc": {
    "seen": [
@@ -135,7 +147,9 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_at": 1789356965.891759
+   "last_checked_at": 1789358764.143216,
+   "last_checked_tick": 1,
+   "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
    "seen": [
@@ -157,7 +171,9 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_at": 1789358492.128375
+   "last_checked_at": 1789358764.143216,
+   "last_checked_tick": 1,
+   "fail_streak": 1
   },
   "tiktok_miyamoto_hiroji_": {
    "seen": [
@@ -165,7 +181,10 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_at": 1789358492.128375
+   "last_checked_at": 1789358764.143216,
+   "last_checked_tick": 1,
+   "fail_streak": 0
   }
- }
+ },
+ "tick": 1
 }
