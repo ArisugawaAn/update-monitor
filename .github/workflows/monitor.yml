@@ -2,7 +2,7 @@ name: monitor
 
 on:
   schedule:
-    - cron: "*/5 * * * *"   # 目标约 5 分钟一查；实际触发时间受 GitHub 调度影响可能有延迟
+    - cron: "3-59/5 * * * *"   # 目标约 5 分钟一查；实际触发时间受 GitHub 调度影响可能有延迟
   workflow_dispatch:          # 支持手动触发（首次上线/排障用）
     inputs:
       mode:
