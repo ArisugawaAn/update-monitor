@@ -48,6 +48,7 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           NOTIFY_TO: ${{ secrets.NOTIFY_TO }}
+          NOTIFY_TITLE_PREFIX: ${{ secrets.NOTIFY_TITLE_PREFIX }}
         run: python -m monitor.main
 
       - name: Health check + test email
@@ -59,6 +60,7 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           NOTIFY_TO: ${{ secrets.NOTIFY_TO }}
+          NOTIFY_TITLE_PREFIX: ${{ secrets.NOTIFY_TITLE_PREFIX }}
         run: python -m monitor.main --test-email
 
       - name: Commit state
