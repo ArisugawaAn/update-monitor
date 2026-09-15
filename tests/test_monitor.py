@@ -390,3 +390,27 @@ def test_checkpoint_alert_fires_once_per_incident(monkeypatch):
 
     m.run_once([BadSrc()], state, {}, set(), tick=4)   # 再次故障 → 再报
     assert len(sent) == 2
+
+
+ELEPHANTSINC_HOME_HTML = """
+<html><body>
+ <a href="./news202609/">最新公告</a>
+ <a href="./news1007/">旧公告</a>
+ <a href="https://google.com/">外部链接</a>
+</body></html>"""
+
+
+def test_parse_elephantsinc_home(tmp_path):
+    from bs4 import BeautifulSoup
+    src = type("S", (), {"key": "site_elephantsinc", "label": "mgmt",
+                         "url": "https://elephants-inc.com/"})()
+    ups = websites._parse_elephantsinc_home(
+        BeautifulSoup(ELEPHANTSINC_HOME_HTML, "html.parser"), src)
+    # 两个 news 链接都被提取（google 链接被过滤）
+    slugs = {u.external_id for u in ups}
+    assert slugs == {"news202609", "news1007"}
+    assert all(u.url.startswith("https://elephants-inc.com/news") for u in ups)
+    # 新 slug 出现 = 新 Update
+    ups2 = websites._parse_elephantsinc_home(
+        BeautifulSoup(ELEPHANTSINC_HOME_HTML.replace("news202609", "news202610"), "html.parser"), src)
+    assert {u.external_id for u in ups2} == {"news202610", "news1007"}

@@ -133,11 +133,34 @@ def _parse_hashpage(soup: BeautifulSoup, src) -> list[Update]:
         published_at=None)]
 
 
+def _parse_elephantsinc_home(soup: BeautifulSoup, src) -> list[Update]:
+    """elephants-inc.com 首页：该站为每篇重要公告创建独立页面
+    （news1007/、news202609/ …），首页链接指向最新公告。
+    提取首页上的 news 链接 slug 作为去重键——新 slug 出现 = 新公告。
+    """
+    slugs = set()
+    for a in soup.select("a[href]"):
+        m = re.search(r"(news\w+)", a.get("href", ""))
+        if m:
+            slugs.add(m.group(1))
+    if not slugs:
+        raise SourceError("首页未找到新闻链接（结构可能已变更）")
+    out = []
+    for slug in sorted(slugs):
+        out.append(Update(
+            source_key=src.key, platform="website", account_name=src.label,
+            content_type="news", external_id=slug,
+            title=f"新公告页面：{slug}",
+            url=f"https://elephants-inc.com/{slug}/",
+            published_at=None))
+    return out
+
+
 SITES = [
     ("site_miyamoto", "artist site", "https://miyamotohiroji.com/news/", _parse_miyamoto),
     ("site_ek", "band site", "https://www.elephantkashimashi.com/news/", _parse_ek),
     ("site_ekfc", "band fc", "https://www.elephantkashimashi.com/fc/free/news/index.php?kd=NEWS", _parse_fc),
-    ("site_elephantsinc", "mgmt site", "https://elephants-inc.com/news1007/", _parse_hashpage),
+    ("site_elephantsinc", "mgmt site", "https://elephants-inc.com/", _parse_elephantsinc_home),
 ]
 
 
