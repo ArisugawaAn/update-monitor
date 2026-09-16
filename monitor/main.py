@@ -38,6 +38,9 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
     5 分钟源每轮查，10 分钟源隔 1 轮查，60 分钟源每 12 轮查。未到轮次直接跳过
     （不发 HTTP 请求、不更新 last_checked_tick、不计入成功/失败/连续失败）。
     连续失败计数持久化在 state[fail_streak]，跨进程累计，成功清零。
+    失败冷却：仅 config.COOLDOWN_SOURCES 内的源（当前 = ig_post）失败后本源跳过
+    N 轮（限流类失败更久），期间不发请求、不计成功/失败、其他源完全不受影响；
+    检查恢复成功后自动解除冷却并重新武装报警（与 ig_story 的 checkpoint 同构）。
     counters 参数保留兼容（本地调试可读），实际以 state 为准。
     """
     summary: list[tuple[str, str]] = []
@@ -53,6 +56,10 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
         if src.key in disabled:  # checkpoint 后本轮剩余时间不再请求
             summary.append((src.key, "已停用（等待 checkpoint 处理）"))
             fail += 1
+            continue
+        cd_left = st.cooldown_remaining_ticks(state, src.key, cur_tick)
+        if cd_left:  # 失败冷却中：本源零请求（整点 sweep 也不破例），其他源照常
+            summary.append((src.key, f"冷却中（跳过 {cd_left} 轮，避免限流封禁）"))
             continue
         interval_ticks = config.check_interval_ticks(src.key)
         interval_min = config.check_interval_minutes(src.key)
@@ -86,18 +93,37 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
         except Exception as e:
             n = st.get_fail_streak(state, src.key) + 1  # 跨轮持久化累计
             st.set_fail_streak(state, src.key, n)
+            err = f"{type(e).__name__}: {e}"
+            cool = config.cooldown_ticks(src.key, err)  # 未启用冷却的源恒为 0
+            limited = cool > 0 and config.is_rate_limited(err)
+            tag = ""
+            if cool:  # 冷却 = 本源后续 N 轮不发请求（仅本源，其他源不受影响）
+                st.set_cooldown_until_tick(state, src.key, cur_tick + cool)
+                tag = f"（{'限流' if limited else '失败'}，本源冷却 {cool} 轮）"
             st.save_state(config.STATE_FILE, state)
             counters[src.key] = n
-            note = f"失败 x{n}: {type(e).__name__}: {e}"[:140]
+            note = f"失败 x{n}{tag}: {err}"[:160]
             if n == config.ALERT_THRESHOLD:  # 恰好跨过阈值时报警一次
-                email.send_alert(f"【监测报警】{src.key} 连续 {n} 次检查失败", f"{type(e).__name__}: {e}")
+                email.send_alert(f"【监测报警】{src.key} 连续 {n} 次检查失败", err)
+            if limited and not st.get_alert_flag(state, src.key, "ratelimit"):
+                # 限流事件按事件去重报警（与 ig_story checkpoint 同构），恢复后重新武装
+                st.set_alert_flag(state, src.key, "ratelimit")
+                st.save_state(config.STATE_FILE, state)
+                email.send_alert(
+                    f"【监测报警】{src.key} 触发平台限流，已冷却 {cool} 轮",
+                    f"{err}\n\n本源已自动跳过后续 {cool} 轮"
+                    f"（≈{cool * config.check_interval_minutes(src.key)} 分钟）："
+                    f"冷却期间不发任何请求，以免加重账号标记；"
+                    f"检查恢复成功后自动解除冷却，其余数据源照常运行。")
             summary.append((src.key, note))
             fail += 1
             continue
 
         ok += 1
         st.set_fail_streak(state, src.key, 0)  # 成功清零
+        st.clear_cooldown(state, src.key)  # 恢复成功 → 解除冷却
         st.clear_alert_flag(state, src.key, "checkpoint")  # 恢复后重新武装报警
+        st.clear_alert_flag(state, src.key, "ratelimit")  # 限流报警同样重新武装
         counters[src.key] = 0
         notify_list, baseline = st.diff_new(state, src.key, updates)
         st.save_state(config.STATE_FILE, state)

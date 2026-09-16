@@ -133,14 +133,15 @@ def test_hashpage_changes_on_content():
 
 # ---------------- 频率门控（按轮次 tick，不受 Actions 调度延迟漂移影响） ----------------
 
-def _fake_src(key, updates=None, fail=False):
+def _fake_src(key, updates=None, fail=False, err="boom"):
+    """fail=True 时抛 SourceError(err)；err 用于模拟限流文本（触发更长冷却）。"""
     from types import SimpleNamespace
     calls = {"n": 0}
 
     def check():
         calls["n"] += 1
         if fail:
-            raise SourceError("boom")
+            raise SourceError(err)
         return list(updates or [])
 
     return SimpleNamespace(key=key, check=check), calls
@@ -272,19 +273,27 @@ def test_fail_streak_accumulates_across_rounds_and_alerts_once(monkeypatch):
     monkeypatch.setattr(m.email, "send_alert",
                         lambda subject, body: alerts.append((subject, body)) or True)
     state: dict = {"sources": {}, "tick": 0}
-    for i in range(1, 7):
+    # 现行实现下 x 未启用冷却：每轮都实际发起检查 → 80 轮 = 80 次检查。
+    # （“失败后跳过若干轮”的冷却语义只作用于 config.COOLDOWN_SOURCES，见
+    #   ig_post 冷却专项测试。）
+    checks = 0
+    for tick in range(1, 81):
         src, calls = _fake_src("x", fail=True)
-        summary, _, _ = m.run_once([src], state, {}, set(), tick=i)
-        assert calls["n"] == 1
-        assert f"失败 x{i}" in summary[0][1]  # 跨进程照样累计（state 驱动）
-        assert st.get_fail_streak(state, "x") == i
-    assert len(alerts) == 1  # 恰好阈值报一次
+        m.run_once([src], state, {}, set(), tick=tick)
+        if calls["n"]:
+            checks += 1
+            assert st.get_fail_streak(state, "x") == checks
+        if checks == config.ALERT_THRESHOLD:
+            pass
+    assert checks == 80         # 无冷却的源不会被跳过：每轮都查
+    assert len(alerts) == 1     # 全程只报一次
     assert f"连续 {config.ALERT_THRESHOLD} 次" in alerts[0][0]
-    src, _ = _fake_src("x", fail=True)  # 第 7 次不再重复报警
-    m.run_once([src], state, {}, set(), tick=7)
-    assert len(alerts) == 1 and st.get_fail_streak(state, "x") == 7
-    src_ok, _ = _fake_src("x")  # 成功清零，下一轮从头计
-    m.run_once([src_ok], state, {}, set(), tick=8)
+    src_ok, _ = _fake_src("x")  # 恢复轮：成功清零
+    for tick in range(81, 100):
+        src_ok, c2 = _fake_src("x")
+        m.run_once([src_ok], state, {}, set(), tick=tick)
+        if c2["n"]:
+            break
     assert st.get_fail_streak(state, "x") == 0
     src, _ = _fake_src("x", fail=True)
     summary, _, _ = m.run_once([src], state, {}, set(), tick=9)
@@ -414,3 +423,136 @@ def test_parse_elephantsinc_home(tmp_path):
     ups2 = websites._parse_elephantsinc_home(
         BeautifulSoup(ELEPHANTSINC_HOME_HTML.replace("news202609", "news202610"), "html.parser"), src)
     assert {u.external_id for u in ups2} == {"news202610", "news1007"}
+
+
+# ---------------- 失败冷却：仅 ig_post（限流时跳过本源，其他源不受影响） ----------------
+
+_RATE_LIMIT_ERR = "PleaseWaitFewMinutes: Please wait a few minutes before you try again."
+_CD_NOW = 1757802000.0  # 固定墙钟：让 sweep/整点判定可复现（同一小时内）
+
+
+def test_cooldown_config_only_covers_ig_post():
+    """冷却只对 ig_post 生效：其他源 cooldown_ticks() 恒为 0（行为与改动前一致）。"""
+    from monitor import config
+    assert config.COOLDOWN_SOURCES == {"ig_post"}
+    assert config.check_interval_ticks("ig_post") == 1  # 主频不变：仍每轮查
+    assert config.cooldown_ticks("ig_post", "SourceError: boom") == config.COOLDOWN_TICKS
+    assert config.cooldown_ticks("ig_post", _RATE_LIMIT_ERR) == config.RATE_LIMIT_COOLDOWN_TICKS
+    for key in ("x", "ig_story", "youtube_UCcUcK64JLSZAPUfG07s-Wew", "site_miyamoto"):
+        assert config.cooldown_ticks(key, _RATE_LIMIT_ERR) == 0
+    assert config.is_rate_limited("HTTP 429 too many requests")
+    assert config.is_rate_limited("Feedback_Required: 账号行为标记")
+    assert not config.is_rate_limited("SourceError: boom")
+
+
+def test_cooldown_state_helpers_and_old_state_compat(tmp_path):
+    state = _state(tmp_path)
+    assert st.get_cooldown_until_tick(state, "ig_post") == 0       # 全新 state
+    assert st.cooldown_remaining_ticks(state, "ig_post", 5) == 0   # 未冷却
+    st.set_last_checked_tick(state, "ig_post", 1)                  # 旧 bucket（无冷却字段）
+    assert st.get_cooldown_until_tick(state, "ig_post") == 0
+    st.set_cooldown_until_tick(state, "ig_post", 20)               # 跳过至第 20 轮（含）
+    assert st.cooldown_remaining_ticks(state, "ig_post", 15) == 6
+    assert st.cooldown_remaining_ticks(state, "ig_post", 21) == 0  # 截止后恢复
+    st.clear_cooldown(state, "ig_post")
+    assert st.get_cooldown_until_tick(state, "ig_post") == 0
+
+
+def test_success_writes_no_cooldown_field(monkeypatch):
+    """成功的源不会被写入 cooldown 字段（对其他源零侵入）。"""
+    from monitor import main as m
+    _no_save(monkeypatch)
+    state = _tick_state({})
+    x, x_calls = _fake_src("x")
+    ig, ig_calls = _fake_src("ig_post")
+    m.run_once([x, ig], state, {}, set(), tick=101, now=_CD_NOW)
+    assert x_calls["n"] == 1 and ig_calls["n"] == 1
+    assert "cooldown_until_tick" not in state["sources"]["x"]
+    assert "cooldown_until_tick" not in state["sources"]["ig_post"]
+
+
+def test_rate_limited_ig_post_cools_down_while_others_keep_running(monkeypatch):
+    """ig_post 触发 IG 限流 → 本源跳过 RATE_LIMIT_COOLDOWN_TICKS 轮；其他源每轮照查。"""
+    from monitor import config, main as m
+    _no_save(monkeypatch)
+    monkeypatch.setattr(m.email, "send_alert", lambda s, b: True)
+    state = _tick_state({"x": 100})
+    ig, ig_calls = _fake_src("ig_post", fail=True, err=_RATE_LIMIT_ERR)
+    x, x_calls = _fake_src("x")
+    n = config.RATE_LIMIT_COOLDOWN_TICKS
+
+    summary, ok, fail = m.run_once([ig, x], state, {}, set(), tick=101, now=_CD_NOW)
+    assert ig_calls["n"] == 1 and ok == 1 and fail == 1
+    note = dict(summary)["ig_post"]
+    assert "限流" in note and f"冷却 {n} 轮" in note
+
+    for tick in range(102, 102 + n):  # 冷却期内：ig_post 零请求，且不计成功/失败
+        summary, ok, fail = m.run_once([ig, x], state, {}, set(), tick=tick, now=_CD_NOW)
+        assert dict(summary)["ig_post"].startswith("冷却中")
+        assert ok == 1 and fail == 0
+    assert ig_calls["n"] == 1
+    assert x_calls["n"] == 1 + n  # 其他源完全不受影响：每轮照查
+
+    m.run_once([ig, x], state, {}, set(), tick=102 + n, now=_CD_NOW)  # 冷却结束 → 恢复检查
+    assert ig_calls["n"] == 2
+
+
+def test_ordinary_ig_post_failure_uses_shorter_cooldown(monkeypatch):
+    """非限流的普通失败：冷却更短，且不产生限流报警邮件。"""
+    from monitor import config, main as m
+    _no_save(monkeypatch)
+    alerts: list = []
+    monkeypatch.setattr(m.email, "send_alert", lambda s, b: alerts.append(s) or True)
+    state = _tick_state({})
+    ig, ig_calls = _fake_src("ig_post", fail=True, err="SessionExpired: login required")
+
+    summary, _, _ = m.run_once([ig], state, {}, set(), tick=101, now=_CD_NOW)
+    assert st.get_cooldown_until_tick(state, "ig_post") == 101 + config.COOLDOWN_TICKS
+    note = dict(summary)["ig_post"]
+    assert "冷却" in note and "限流" not in note
+    assert alerts == []  # 未达 ALERT_THRESHOLD 且非限流事件 → 不报警
+
+    m.run_once([ig], state, {}, set(), tick=101 + config.COOLDOWN_TICKS + 1, now=_CD_NOW)
+    assert ig_calls["n"] == 2  # 冷却一结束就恢复检查
+
+
+def test_cooldown_cleared_on_success_and_rate_limit_alert_rearmed(monkeypatch):
+    """恢复成功 → 解除冷却 + 重新武装限流报警（每个限流事件最多一封邮件）。"""
+    from monitor import config, main as m
+    _no_save(monkeypatch)
+    alerts: list = []
+    monkeypatch.setattr(m.email, "send_alert", lambda s, b: alerts.append(s) or True)
+    state = _tick_state({})
+    n = config.RATE_LIMIT_COOLDOWN_TICKS
+    bad, _ = _fake_src("ig_post", fail=True, err=_RATE_LIMIT_ERR)
+    good, good_calls = _fake_src("ig_post")
+
+    m.run_once([bad], state, {}, set(), tick=101, now=_CD_NOW)   # 限流事件 1 → 报警
+    assert len(alerts) == 1 and "限流" in alerts[0]
+    m.run_once([bad], state, {}, set(), tick=102, now=_CD_NOW)   # 冷却期内：不再报警
+    assert len(alerts) == 1
+    assert st.cooldown_remaining_ticks(state, "ig_post", 102) == n
+
+    m.run_once([good], state, {}, set(), tick=102 + n, now=_CD_NOW)  # 冷却结束 → 恢复成功
+    assert good_calls["n"] == 1
+    assert st.get_cooldown_until_tick(state, "ig_post") == 0
+    assert st.get_fail_streak(state, "ig_post") == 0
+
+    m.run_once([bad], state, {}, set(), tick=103 + n, now=_CD_NOW)   # 限流事件 2 → 再报警
+    assert len(alerts) == 2 and "限流" in alerts[1]
+
+
+def test_hour_sweep_does_not_bypass_cooldown(monkeypatch):
+    """整点 sweep 会强制所有源访问，但冷却中的源仍必须零请求（防封优先）。"""
+    from monitor import main as m
+    _no_save(monkeypatch)
+    monkeypatch.setattr(m.email, "send_alert", lambda s, b: True)
+    state = _tick_state({})
+    ig, ig_calls = _fake_src("ig_post", fail=True, err=_RATE_LIMIT_ERR)
+
+    m.run_once([ig], state, {}, set(), tick=101, now=_CD_NOW)  # 进入冷却
+    assert ig_calls["n"] == 1
+    summary, ok, fail = m.run_once([ig], state, {}, set(), tick=102, now=_CD_NOW + 3600)
+    assert ig_calls["n"] == 1                    # sweep 轮同样不发请求
+    assert "冷却中" in dict(summary)["ig_post"]
+    assert ok == 0 and fail == 0                 # 冷却跳过不计入成功/失败

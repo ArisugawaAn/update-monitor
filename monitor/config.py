@@ -65,6 +65,7 @@ TIKTOK_ACCOUNTS = [
 #   5 分钟源每轮查，10 分钟源隔 1 轮查，60 分钟源每 12 轮查。
 CHECK_INTERVAL_MINUTES = {  # 保留：人类可读的期望 cadence（实际门控用下面的轮次）
     "ig_story": 5,
+    "ig_post": 5,
     "x": 5,
     "x_paonews_info": 60,
     "x_hmnews_info": 60,
@@ -80,6 +81,7 @@ DEFAULT_CHECK_INTERVAL_MINUTES = 5  # 未知新源的兜底：保持最高频率
 
 CHECK_INTERVAL_TICKS = {  # 实际门控：每 N 轮查一次
     "ig_story": 1,
+    "ig_post": 1,  # 与 Story 源同频（每轮查）；触发限流后由下面的 COOLDOWN_* 自动降频
     "x": 1,  # 主号 @miyamoto_hiroji：每轮查，不受次要号影响
     "x_paonews_info": 12,  # 次要 X 号：每 12 轮（≈60 分钟）查
     "x_hmnews_info": 12,
@@ -138,3 +140,37 @@ def check_interval_ticks(key: str) -> int:
 # 连续“检查轮次”失败 N 次发一封（只在检查轮计数，跳过轮不计数）。
 # 时间含义：5 分钟源 6 轮 ≈ 30 分钟；10 分钟源 ≈ 60 分钟；60 分钟源 ≈ 6 小时。
 ALERT_THRESHOLD = 6
+
+# ---- 失败冷却（只对列出的源生效；其他源行为与改动前完全一致） ------------------
+# ig_post 走 instagrapi 私有 API（每轮对 3 个账号各发 1 次 user_medias）。触发 IG
+# “Please wait a few minutes before you try again”限流后，若仍每轮重试会加重账号
+# 标记甚至封禁；因此对**本源**采用与 ig_story 的 checkpoint 同构的处理：
+#   失败 → 本源冷却 N 轮（零请求、不计入成功/失败）+ 限流类事件报警一次（去重）
+#   恢复成功 → 解除冷却并重新武装报警
+# 未列入 COOLDOWN_SOURCES 的源，cooldown_ticks() 恒返回 0 → 门控逻辑完全跳过。
+COOLDOWN_SOURCES = {"ig_post"}      # 仅这些源失败后冷却（置空 set() 即全关）
+COOLDOWN_TICKS = 3                  # 普通失败：跳过 3 轮（5 分钟源 ≈ 15 分钟）
+RATE_LIMIT_COOLDOWN_TICKS = 12      # 限流类失败：跳过 12 轮（5 分钟源 ≈ 60 分钟）
+RATE_LIMIT_MARKERS = (              # 命中任一（小写子串）即视为平台限流/行为标记
+    "pleasewait",                   # instagrapi 异常类名 PleaseWaitFewMinutes
+    "please wait",
+    "few minutes",
+    "feedback_required",
+    "rate limit",
+    "ratelimit",
+    "too many requests",
+    "429 too many",
+)
+
+
+def is_rate_limited(err_text: str) -> bool:
+    """错误文本是否属于平台限流/行为标记（用于选择更长的冷却）。"""
+    low = (err_text or "").lower()
+    return any(marker in low for marker in RATE_LIMIT_MARKERS)
+
+
+def cooldown_ticks(key: str, err_text: str = "") -> int:
+    """失败后本源应跳过的轮数；未启用冷却的源返回 0（行为不变）。"""
+    if key not in COOLDOWN_SOURCES:
+        return 0
+    return RATE_LIMIT_COOLDOWN_TICKS if is_rate_limited(err_text) else COOLDOWN_TICKS

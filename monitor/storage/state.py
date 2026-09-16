@@ -6,6 +6,8 @@
 - tick：全局轮次计数（每轮 Action +1），按轮次门控各源检查频率
 - fail_streak：per-source 连续“检查轮次”失败计数，跨进程持久化（Actions
   每轮都是全新进程，内存计数无法跨轮累计）
+- cooldown_until_tick：per-source 失败冷却的最后一个被跳过轮次（仅
+  config.COOLDOWN_SOURCES 内的源会写入）；冷却轮不发请求、不计成功/失败
 """
 import json
 from pathlib import Path
@@ -122,6 +124,38 @@ def get_fail_streak(state: dict, key: str) -> int:
 def set_fail_streak(state: dict, key: str, n: int) -> None:
     """持久化连续失败计数（成功时置 0）。"""
     _bucket(state, key)["fail_streak"] = int(n)
+
+
+def get_cooldown_until_tick(state: dict, key: str) -> int:
+    """返回该源冷却期内**最后一个被跳过的轮次**（含）；无冷却/旧 state 返回 0。"""
+    b = state.get("sources", {}).get(key)
+    if not b:
+        return 0
+    until = b.get("cooldown_until_tick")
+    return int(until) if isinstance(until, (int, float)) and int(until) > 0 else 0
+
+
+def cooldown_remaining_ticks(state: dict, key: str, tick: int) -> int:
+    """本轮起仍需跳过的轮数（含本轮）；0 = 不在冷却中，可正常检查。
+
+    冷却从失败轮的**下一轮**开始：失败轮本身已经发过请求，不重复计入。
+    """
+    until = get_cooldown_until_tick(state, key)
+    if until <= 0 or tick > until:
+        return 0
+    return until - tick + 1
+
+
+def set_cooldown_until_tick(state: dict, key: str, tick: int) -> None:
+    """进入冷却：tick 为最后一个被跳过的轮次（调用方按“当前轮 + 冷却轮数”换算）。"""
+    _bucket(state, key)["cooldown_until_tick"] = int(tick)
+
+
+def clear_cooldown(state: dict, key: str) -> None:
+    """检查成功 → 解除冷却（下次失败可重新进入）。"""
+    b = state.get("sources", {}).get(key)
+    if b and b.get("cooldown_until_tick"):
+        b["cooldown_until_tick"] = 0
 
 
 def get_alert_flag(state: dict, key: str, kind: str) -> bool:
