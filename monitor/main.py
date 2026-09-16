@@ -86,9 +86,13 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
         except Exception as e:
             n = st.get_fail_streak(state, src.key) + 1  # 跨轮持久化累计
             st.set_fail_streak(state, src.key, n)
+            # 失败冷却：连续失败越多，跳过越久（指数退避，最多 12 轮 ≈ 1 小时）
+            # n=1→下轮重试 | n=2→跳1轮 | n=3→跳3轮 | n=6→跳12轮
+            skip = min(2 ** (n - 1) - 1, 12) if n > 1 else 0
+            st.set_last_checked_tick(state, src.key, cur_tick + skip)
             st.save_state(config.STATE_FILE, state)
             counters[src.key] = n
-            note = f"失败 x{n}: {type(e).__name__}: {e}"[:140]
+            note = f"失败 x{n}（冷却 {skip} 轮）: {type(e).__name__}: {e}"[:140]
             if n == config.ALERT_THRESHOLD:  # 恰好跨过阈值时报警一次
                 email.send_alert(f"【监测报警】{src.key} 连续 {n} 次检查失败", f"{type(e).__name__}: {e}")
             summary.append((src.key, note))
