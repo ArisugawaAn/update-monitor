@@ -36,8 +36,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 487,
-   "last_checked_at": 1789541468.842395,
+   "last_checked_tick": 488,
+   "last_checked_at": 1789541766.302033,
    "fail_streak": 0
   },
   "x": {
@@ -65,8 +65,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 487,
-   "last_checked_at": 1789541468.842395,
+   "last_checked_tick": 488,
+   "last_checked_at": 1789541766.302033,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -277,14 +277,51 @@
    "fail_streak": 0
   },
   "ig_post": {
-   "seen": [],
+   "seen": [
+    "DcT04NVEnEN",
+    "DcTzyoXkmoq",
+    "DcEEMFfSGko",
+    "DbqaveOkjWt",
+    "DaSg2SaErT3",
+    "DZu5oVvEi0M",
+    "DYpFovKklRG",
+    "DYjyXTPkkAL",
+    "DWwFJITkjk_",
+    "DV3mnyhiQer",
+    "DU3CgVGkrO9",
+    "DTUrvYKEhD5",
+    "DcnlX3myjRH",
+    "DcD4KeWSvnn",
+    "Da2e43MSc9M",
+    "Daz6Q5wyPA-",
+    "DapfOvyy43O",
+    "DamYMApy5tM",
+    "DakmBagSqNv",
+    "DakljMnSOxW",
+    "DaXqKVYSZLh",
+    "DaXpkTmyW7e",
+    "DaKt-VPy74g",
+    "DaKtzLSSiVx",
+    "DYPHQqFiaBM",
+    "DXZTvDlid3x",
+    "DWX7FXcCYT7",
+    "DaVxlR2zFtD",
+    "DaUMPZLpHlM",
+    "DaJ7d0PJQz6",
+    "DZ4eIRTiQLd",
+    "DZrj7R7JDld",
+    "DZjQEexJC9g",
+    "DZb_3hlp2t-",
+    "DZb-c1zJSBS",
+    "DZXiJAkie8L"
+   ],
    "notified": [],
-   "baselined": false,
-   "last_checked_tick": 487,
-   "last_checked_at": 1789541468.842395,
-   "fail_streak": 2
+   "baselined": true,
+   "last_checked_tick": 488,
+   "last_checked_at": 1789541766.302033,
+   "fail_streak": 0
   }
  },
- "tick": 487,
+ "tick": 488,
  "last_sweep_hour": "2026-09-16T06"
 }
