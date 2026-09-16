@@ -18,6 +18,14 @@ IG_ACCOUNTS = [  # (用户名, 用户ID) —— ID 永久不变，POC 已实测
 ]
 IG_WEB_APP_ID = "936619743392459"
 
+# ---- Instagram Post/Reel（instagrapi 私有 API，与 Story 源分离） ----------
+IG_POST_ACCOUNTS = [  # (用户名, 用户ID)
+    ("miyamoto_doppo", 10584438821),
+    ("elephantsinc_official", 66821998949),
+    ("h.m.staff", 71496324324),
+]
+IG_POST_SESSION_JSON = os.environ.get("IG_POST_SESSION_JSON", "")  # Actions: session.json 完整内容
+
 # ---- X（已 POC 验证，完全无账号） ----------------------------------------
 X_USERS = [  # 按优先级排列：主号在前；每个账号 = 独立 source（独立去重/频率/报警）
     "miyamoto_hiroji",  # 最重要：每轮查

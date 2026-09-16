@@ -49,6 +49,7 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           NOTIFY_TO: ${{ secrets.NOTIFY_TO }}
           NOTIFY_TITLE_PREFIX: ${{ secrets.NOTIFY_TITLE_PREFIX }}
+          IG_POST_SESSION_JSON: ${{ secrets.IG_POST_SESSION_JSON }}
         run: python -m monitor.main
 
       - name: Health check + test email
@@ -61,6 +62,7 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           NOTIFY_TO: ${{ secrets.NOTIFY_TO }}
           NOTIFY_TITLE_PREFIX: ${{ secrets.NOTIFY_TITLE_PREFIX }}
+          IG_POST_SESSION_JSON: ${{ secrets.IG_POST_SESSION_JSON }}
         run: python -m monitor.main --test-email
 
       - name: Commit state
