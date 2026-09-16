@@ -414,27 +414,3 @@ def test_parse_elephantsinc_home(tmp_path):
     ups2 = websites._parse_elephantsinc_home(
         BeautifulSoup(ELEPHANTSINC_HOME_HTML.replace("news202609", "news202610"), "html.parser"), src)
     assert {u.external_id for u in ups2} == {"news202610", "news1007"}
-
-
-def test_failure_backoff_skips_rounds(monkeypatch):
-    """失败后指数退避：n=2 失败 → 跳过若干轮才允许再试；成功后恢复节奏。"""
-    from monitor import main as m
-    _no_save(monkeypatch)
-    state = _tick_state({})
-    src, calls = _fake_src("ig_post", fail=True)
-
-    # 第 1 次失败（tick=1）
-    m.run_once([src], state, {}, set(), tick=1)
-    assert calls["n"] == 1
-    # 第 2 次失败（tick=2，退避允许立即再试一次）
-    m.run_once([src], state, {}, set(), tick=2)
-    assert calls["n"] == 2
-    # 退避生效：last_checked_tick 被推到未来（2^1-1=1 轮 → tick=3）
-    assert state["sources"]["ig_post"]["last_checked_tick"] >= 3
-    # tick=3 未到退避轮 → 跳过
-    m.run_once([src], state, {}, set(), tick=3)
-    assert calls["n"] == 2
-    # 成功后：fail_streak 清零，下一轮正常
-    src2, calls2 = _fake_src("ig_post")
-    m.run_once([src2], state, {}, set(), tick=10)
-    assert calls2["n"] == 1 and st.get_fail_streak(state, "ig_post") == 0

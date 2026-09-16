@@ -93,9 +93,9 @@ def is_due_tick(state: dict, key: str, interval_ticks: int, tick: int) -> bool:
     """按轮次门控：从未检查过 → True；否则 (tick - last_tick) >= interval。
 
     last_tick 缺失的旧 bucket 视为从未检查（首次必须查）。
-    interval=1 时同样走 (tick - last) >= 1 判断 —— tick 每轮 +1，
-    正常情况下等价于"每轮必查"，但失败退避可把 last_tick 推向未来以跳过轮次。
     """
+    if interval_ticks <= 1:
+        return True
     b = state.get("sources", {}).get(key)
     if not b:
         return True
