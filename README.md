@@ -7,9 +7,8 @@ sends one email per new item. Runs entirely on GitHub Actions (free tier).
 ## Sources
 
 - Instagram (stories of the configured public accounts)
-- Instagram posts/reels (private API via `instagrapi`, separate source from
-  stories — needs its own session, see the secrets table below; checked every
-  10 minutes like YouTube, to stay well clear of Instagram's rate limits)
+- Instagram posts/reels (two channels: the stories-style web API first, with the
+  `instagrapi` private API as fallback — checked every 10 minutes like YouTube)
 - X / Twitter (public RSS mirrors)
 - YouTube (official channel feeds)
 - TikTok (public profile)
@@ -59,3 +58,15 @@ after recovery), and an hourly sweep does not bypass it. Every other source
 keeps its normal cadence. Tune it in `monitor/config.py` (`COOLDOWN_SOURCES`,
 `COOLDOWN_TICKS`, `RATE_LIMIT_COOLDOWN_TICKS`, `RATE_LIMIT_MARKERS`); sources
 not listed there behave exactly as before.
+
+Instagram rate limits (posts/reels source): `instagrapi`'s private API gets
+throttled with `PleaseWaitFewMinutes` from GitHub Actions' datacenter IPs, even
+though the *same* session works fine from a residential IP (verified 2026-09-17:
+3/3 accounts OK at home, throttled in Actions). The stories-style web API
+(`IG_COOKIE` + `/api/v1/feed/user/<uid>/`) is therefore tried first, with the
+private API as fallback; both use the post `code` as the item id, so switching
+channels never re-notifies. If a hard IP-level block hits both channels, the
+only reliable fix is a non-datacenter egress — a self-hosted runner or running
+`python -m monitor.main` on a home machine, where the same session was verified
+to work. `IG_COOKIE`/`IG_POST_SESSION_JSON` remain as-is; no re-login is needed
+for the web channel.

@@ -577,3 +577,181 @@ def test_ig_post_follows_same_cadence_as_youtube(monkeypatch):
     assert calls["n"] == 1 and ok2 == 1
     assert config.check_interval_ticks("ig_post") == \
         config.check_interval_ticks("youtube_UCcUcK64JLSZAPUfG07s-Wew")
+
+
+# ---------------- ig_post 双通道：网页路线优先（Story 同款），instagrapi 兜底 ----------------
+
+class _FakeResp:
+    """假 requests.Response：只提供被测代码用到的字段。"""
+
+    def __init__(self, status=200, payload=None, text=None):
+        self.status_code = status
+        self._payload = payload if payload is not None else {}
+        self.text = text if text is not None else json.dumps(self._payload)
+
+    def json(self):
+        return self._payload
+
+
+class _FakeWebSession:
+    """假网页会话：按 URL 里的 uid 返回映射好的响应（未映射 → 空 items）。
+
+    resp_by_uid: {uid: payload dict | _FakeResp | Exception}
+    resp:        所有请求统一使用的响应（payload dict | _FakeResp | Exception）
+    """
+
+    def __init__(self, resp_by_uid=None, resp=None):
+        self.resp_by_uid = resp_by_uid or {}
+        self.resp = resp
+        self.calls: list = []
+
+    def get(self, url, params=None, timeout=None):
+        self.calls.append((url, params))
+        out = self.resp
+        for uid, r in self.resp_by_uid.items():
+            if url.endswith(f"/feed/user/{uid}/"):
+                out = r
+                break
+        if out is None:
+            out = {"items": []}
+        if isinstance(out, Exception):
+            raise out
+        if isinstance(out, dict):
+            return _FakeResp(200, out)
+        return out
+
+
+def _boom(msg):
+    """返回一个「被调用即抛 SourceError」的替身函数。"""
+
+    def _raise(*args, **kwargs):
+        raise SourceError(msg)
+
+    return _raise
+
+
+_WEB_ITEM = {
+    "code": "DcT04NVEnEN",
+    "product_type": "clips",
+    "media_type": 2,
+    "taken_at": 1757800000,
+    "caption": {"text": "  新的 Reel  "},
+    "video_versions": [{"url": "https://cdn.example/v.mp4"}],
+    "image_versions2": {"candidates": [{"url": "https://cdn.example/i.jpg"}]},
+}
+
+
+def test_ig_post_web_parses_feed_items():
+    """网页通道：/feed/user/<uid>/ 的 items → Update（code 作 external_id，clips→reel）。"""
+    from monitor import config
+    from monitor.sources import ig_post
+    # 只有第一个账号有内容；其余账号返回空 items（无 code 的条目同样被跳过）
+    sess = _FakeWebSession(resp_by_uid={
+        10584438821: {"items": [_WEB_ITEM, {"media_type": 1}]}})
+    ups = ig_post._web_updates(session=sess)
+    assert len(ups) == 1
+    assert len(sess.calls) == len(config.IG_POST_ACCOUNTS)   # 每个账号各请求一次
+    u = ups[0]
+    assert u.external_id == "DcT04NVEnEN"
+    assert u.content_type == "reel"
+    assert u.title == "新的 Reel"                    # caption 已 strip
+    assert u.source_key == "ig_post_miyamoto_doppo"
+    assert u.media_urls == ["https://cdn.example/v.mp4", "https://cdn.example/i.jpg"]
+    assert u.published_at is not None and u.published_at.tzinfo is not None
+    assert sess.calls[0] == (ig_post._WEB_API.format(uid=10584438821),
+                             {"count": config.IG_POST_WEB_COUNT})
+
+
+def test_ig_post_web_non_clips_is_post():
+    """非 clips（轮播/普通帖）→ content_type=post。"""
+    from monitor.sources import ig_post
+    item = dict(_WEB_ITEM, code="XYZ789", product_type="carousel_container")
+    sess = _FakeWebSession(resp_by_uid={10584438821: {"items": [item]}})
+    ups = ig_post._web_updates(session=sess)
+    assert [u.content_type for u in ups] == ["post"]
+
+
+def test_ig_post_web_checkpoint_and_rate_limit_handling():
+    """网页端点致命响应：checkpoint 直接上抛；限流 → SourceError（可回退到私有 API）。"""
+    from monitor import config
+    from monitor.models import CheckpointError
+    from monitor.sources import ig_post
+    cp = _FakeWebSession(resp=_FakeResp(400, text='{"message":"checkpoint_required"}'))
+    try:
+        ig_post._web_updates(session=cp)
+        raise AssertionError("应抛 CheckpointError")
+    except CheckpointError:
+        pass
+    rl = _FakeWebSession(resp=_FakeResp(401, text='{"message":"Please wait a few minutes '
+                                                  'before you try again.",'
+                                                  '"require_login":true}'))
+    try:
+        ig_post._web_updates(session=rl)
+        raise AssertionError("应抛 SourceError")
+    except SourceError as e:
+        assert "网页端点 HTTP 401" in str(e) and "few minutes" in str(e)
+        assert config.is_rate_limited(str(e))  # 识别为限流 → 主流程用更长冷却
+
+
+def test_ig_post_private_channel_parses_medias():
+    """instagrapi 通道：client 可注入，产出与网页通道同构（code 作 external_id）。"""
+    from monitor.sources import ig_post
+
+    class _M:
+        code = "DcTzyoXkmoq"
+        product_type = "clips"
+        taken_at = None
+        caption_text = "  caption  "
+        thumbnail_url = "https://cdn.example/thumb.jpg"
+
+    class _C:
+        def user_medias(self, uid, count):
+            return [_M()]
+
+    ups = ig_post._private_updates(client=_C())
+    assert ups[0].external_id == "DcTzyoXkmoq"
+    assert ups[0].content_type == "reel"
+    assert ups[0].title == "caption"
+    assert ups[0].media_urls == ["https://cdn.example/thumb.jpg"]
+
+
+def test_ig_post_check_falls_back_to_private_api(monkeypatch):
+    """网页通道失败 → 自动回退 instagrapi，监控能力不中断。"""
+    from monitor.sources import ig_post
+    sentinel = [_u("fallback")]
+    monkeypatch.setattr(ig_post, "_web_updates", _boom("web down"))
+    monkeypatch.setattr(ig_post, "_private_updates", lambda **kw: sentinel)
+    assert ig_post.check() == sentinel
+
+
+def test_ig_post_check_reports_both_channel_failures(monkeypatch):
+    """两条通道都失败 → SourceError 带上两个原因（便于定位并触发冷却）。"""
+    from monitor.sources import ig_post
+    monkeypatch.setattr(ig_post, "_web_updates", _boom("web down"))
+    monkeypatch.setattr(ig_post, "_private_updates", _boom("api down"))
+    try:
+        ig_post.check()
+        raise AssertionError("应抛 SourceError")
+    except SourceError as e:
+        msg = str(e)
+        assert "网页路线" in msg and "web down" in msg
+        assert "私有API" in msg and "api down" in msg
+
+
+def test_ig_post_web_first_off_uses_private_only(monkeypatch):
+    """IG_POST_WEB_FIRST=False 时只用 instagrapi（本地调试用）。"""
+    from monitor import config
+    from monitor.sources import ig_post
+    monkeypatch.setattr(config, "IG_POST_WEB_FIRST", False)
+    monkeypatch.setattr(ig_post, "_private_updates", lambda **kw: [_u("p")])
+    monkeypatch.setattr(ig_post, "_web_updates", _boom("不应走网页路线"))
+    assert [u.external_id for u in ig_post.check()] == ["p"]
+
+
+def test_ig_post_without_cookie_falls_back_to_private_api(monkeypatch):
+    """无 IG_COOKIE（本地/未配置）→ 网页路线自动让位给 instagrapi。"""
+    from monitor import config
+    from monitor.sources import ig_post
+    monkeypatch.setattr(config, "IG_COOKIE", "")
+    monkeypatch.setattr(ig_post, "_private_updates", lambda **kw: [_u("local")])
+    assert [u.external_id for u in ig_post.check()] == ["local"]

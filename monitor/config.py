@@ -26,6 +26,10 @@ IG_POST_ACCOUNTS = [  # (用户名, 用户ID)
     ("h.m.staff", 71496324324),
 ]
 IG_POST_SESSION_JSON = os.environ.get("IG_POST_SESSION_JSON", "")  # Actions: session.json 完整内容
+# 通道选择：网页 XHR 优先（与 Story 源同账号同款路线，实测在 Actions IP 下可用），
+# 失败时回退 instagrapi 私有 API（该通道在 Actions 数据中心 IP 上会被 IG 限流）。
+IG_POST_WEB_FIRST = True   # False = 只用 instagrapi（本地调试可用）
+IG_POST_WEB_COUNT = 12     # 每条通道每次取回的媒体条数（两通道共用）
 
 # ---- X（已 POC 验证，完全无账号） ----------------------------------------
 X_USERS = [  # 按优先级排列：主号在前；每个账号 = 独立 source（独立去重/频率/报警）
