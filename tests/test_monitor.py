@@ -435,7 +435,10 @@ def test_cooldown_config_only_covers_ig_post():
     """冷却只对 ig_post 生效：其他源 cooldown_ticks() 恒为 0（行为与改动前一致）。"""
     from monitor import config
     assert config.COOLDOWN_SOURCES == {"ig_post"}
-    assert config.check_interval_ticks("ig_post") == 1  # 主频不变：仍每轮查
+    # 频率与 YouTube 完全一致（10 分钟 / 隔 1 轮），与冷却机制相互独立
+    assert config.check_interval_ticks("ig_post") == 2
+    assert config.check_interval_minutes("ig_post") == 10
+    assert config.is_hour_aligned("ig_post") is False  # 与 youtube 一样不参与整点对齐
     assert config.cooldown_ticks("ig_post", "SourceError: boom") == config.COOLDOWN_TICKS
     assert config.cooldown_ticks("ig_post", _RATE_LIMIT_ERR) == config.RATE_LIMIT_COOLDOWN_TICKS
     for key in ("x", "ig_story", "youtube_UCcUcK64JLSZAPUfG07s-Wew", "site_miyamoto"):
@@ -538,7 +541,8 @@ def test_cooldown_cleared_on_success_and_rate_limit_alert_rearmed(monkeypatch):
     assert st.get_cooldown_until_tick(state, "ig_post") == 0
     assert st.get_fail_streak(state, "ig_post") == 0
 
-    m.run_once([bad], state, {}, set(), tick=103 + n, now=_CD_NOW)   # 限流事件 2 → 再报警
+    step = config.check_interval_ticks("ig_post")  # 恢复轮之后需再满一个间隔才到期
+    m.run_once([bad], state, {}, set(), tick=102 + n + step, now=_CD_NOW)  # 限流事件 2 → 再报警
     assert len(alerts) == 2 and "限流" in alerts[1]
 
 
@@ -556,3 +560,20 @@ def test_hour_sweep_does_not_bypass_cooldown(monkeypatch):
     assert ig_calls["n"] == 1                    # sweep 轮同样不发请求
     assert "冷却中" in dict(summary)["ig_post"]
     assert ok == 0 and fail == 0                 # 冷却跳过不计入成功/失败
+
+
+def test_ig_post_follows_same_cadence_as_youtube(monkeypatch):
+    """ig_post 与 youtube 同为 10 分钟源：隔 1 轮才查一次（sweep 仍会强制）。"""
+    from monitor import config, main as m
+    _no_save(monkeypatch)
+    monkeypatch.setattr(config, "HOUR_ALIGNED_SOURCES", set())  # 只验证 tick 节奏
+    state = _tick_state({})
+    st.set_last_checked_tick(state, "ig_post", 100)
+    ig, calls = _fake_src("ig_post")
+
+    s1, ok1, _ = m.run_once([ig], state, {}, set(), tick=101)  # 间隔 1 < 2 → 跳过
+    assert calls["n"] == 0 and ok1 == 0 and "跳过" in s1[0][1]
+    s2, ok2, _ = m.run_once([ig], state, {}, set(), tick=102)  # 间隔 2 → 检查
+    assert calls["n"] == 1 and ok2 == 1
+    assert config.check_interval_ticks("ig_post") == \
+        config.check_interval_ticks("youtube_UCcUcK64JLSZAPUfG07s-Wew")

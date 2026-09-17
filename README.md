@@ -8,7 +8,8 @@ sends one email per new item. Runs entirely on GitHub Actions (free tier).
 
 - Instagram (stories of the configured public accounts)
 - Instagram posts/reels (private API via `instagrapi`, separate source from
-  stories — needs its own session, see the secrets table below)
+  stories — needs its own session, see the secrets table below; checked every
+  10 minutes like YouTube, to stay well clear of Instagram's rate limits)
 - X / Twitter (public RSS mirrors)
 - YouTube (official channel feeds)
 - TikTok (public profile)
@@ -51,8 +52,10 @@ Cooldown (ban avoidance): the Instagram posts/reels source talks to Instagram's
 private API, so repeated retries after a rate limit can deepen the account flag.
 Mirroring the Story source's `checkpoint` handling, **only that source** cools
 down on failure: no request at all for the next N rounds (rate-limit errors use
-the longer N), skips are not counted as success/failure, one alert email is sent
-per incident (re-armed after recovery), and an hourly sweep does not bypass it.
-Every other source keeps its normal cadence. Tune it in `monitor/config.py`
-(`COOLDOWN_SOURCES`, `COOLDOWN_TICKS`, `RATE_LIMIT_COOLDOWN_TICKS`,
-`RATE_LIMIT_MARKERS`); sources not listed there behave exactly as before.
+the longer N; a round is one scheduled run ≈5 minutes, so the default rate-limit
+cooldown is ≈60 minutes, independent of the source's own interval), skips are
+not counted as success/failure, one alert email is sent per incident (re-armed
+after recovery), and an hourly sweep does not bypass it. Every other source
+keeps its normal cadence. Tune it in `monitor/config.py` (`COOLDOWN_SOURCES`,
+`COOLDOWN_TICKS`, `RATE_LIMIT_COOLDOWN_TICKS`, `RATE_LIMIT_MARKERS`); sources
+not listed there behave exactly as before.

@@ -19,6 +19,7 @@ IG_ACCOUNTS = [  # (用户名, 用户ID) —— ID 永久不变，POC 已实测
 IG_WEB_APP_ID = "936619743392459"
 
 # ---- Instagram Post/Reel（instagrapi 私有 API，与 Story 源分离） ----------
+# 频率：与 YouTube 同为 10 分钟源（CHECK_INTERVAL_TICKS = 2）；失败后另见 COOLDOWN_*。
 IG_POST_ACCOUNTS = [  # (用户名, 用户ID)
     ("miyamoto_doppo", 10584438821),
     ("elephantsinc_official", 66821998949),
@@ -62,10 +63,11 @@ TIKTOK_ACCOUNTS = [
 
 # ---- 检查频率：Cloudflare 每 ~5 分钟触发一轮 Action（延迟不可避免）。
 #   为避免墙钟漂移漏查，改为按轮次计数（每轮 Action = 1 tick）：
-#   5 分钟源每轮查，10 分钟源隔 1 轮查，60 分钟源每 12 轮查。
+#   5 分钟源每轮查，10 分钟源隔 1 轮查（youtube / tiktok / ig_post），
+#   60 分钟源每 12 轮查。
 CHECK_INTERVAL_MINUTES = {  # 保留：人类可读的期望 cadence（实际门控用下面的轮次）
     "ig_story": 5,
-    "ig_post": 5,
+    "ig_post": 10,  # 与 YouTube 同频（私有 API：降频以降低被 IG 限流/封禁的风险）
     "x": 5,
     "x_paonews_info": 60,
     "x_hmnews_info": 60,
@@ -81,7 +83,7 @@ DEFAULT_CHECK_INTERVAL_MINUTES = 5  # 未知新源的兜底：保持最高频率
 
 CHECK_INTERVAL_TICKS = {  # 实际门控：每 N 轮查一次
     "ig_story": 1,
-    "ig_post": 1,  # 与 Story 源同频（每轮查）；触发限流后由下面的 COOLDOWN_* 自动降频
+    "ig_post": 2,  # 与 YouTube 同频：隔 1 轮（≈10 分钟）查；失败后由下面的 COOLDOWN_* 进一步降频
     "x": 1,  # 主号 @miyamoto_hiroji：每轮查，不受次要号影响
     "x_paonews_info": 12,  # 次要 X 号：每 12 轮（≈60 分钟）查
     "x_hmnews_info": 12,
@@ -142,15 +144,18 @@ def check_interval_ticks(key: str) -> int:
 ALERT_THRESHOLD = 6
 
 # ---- 失败冷却（只对列出的源生效；其他源行为与改动前完全一致） ------------------
-# ig_post 走 instagrapi 私有 API（每轮对 3 个账号各发 1 次 user_medias）。触发 IG
-# “Please wait a few minutes before you try again”限流后，若仍每轮重试会加重账号
-# 标记甚至封禁；因此对**本源**采用与 ig_story 的 checkpoint 同构的处理：
+# ig_post 走 instagrapi 私有 API（对 3 个账号各发 1 次 user_medias，默认 10 分钟
+# 一轮）。触发 IG “Please wait a few minutes before you try again”限流后，若继续
+# 高频重试会加重账号标记甚至封禁；因此对**本源**采用与 ig_story 的 checkpoint
+# 同构的处理：
 #   失败 → 本源冷却 N 轮（零请求、不计入成功/失败）+ 限流类事件报警一次（去重）
 #   恢复成功 → 解除冷却并重新武装报警
 # 未列入 COOLDOWN_SOURCES 的源，cooldown_ticks() 恒返回 0 → 门控逻辑完全跳过。
 COOLDOWN_SOURCES = {"ig_post"}      # 仅这些源失败后冷却（置空 set() 即全关）
-COOLDOWN_TICKS = 3                  # 普通失败：跳过 3 轮（5 分钟源 ≈ 15 分钟）
-RATE_LIMIT_COOLDOWN_TICKS = 12      # 限流类失败：跳过 12 轮（5 分钟源 ≈ 60 分钟）
+# 冷却按“调度轮次”计数：每轮 Action ≈5 分钟，与源自身的检查间隔无关
+# （即 10 分钟源冷却 12 轮同样是 ≈60 分钟，因为冷却期内每个 tick 都跳过）。
+COOLDOWN_TICKS = 3                  # 普通失败：跳过 3 轮 ≈ 15 分钟
+RATE_LIMIT_COOLDOWN_TICKS = 12      # 限流类失败：跳过 12 轮 ≈ 60 分钟
 RATE_LIMIT_MARKERS = (              # 命中任一（小写子串）即视为平台限流/行为标记
     "pleasewait",                   # instagrapi 异常类名 PleaseWaitFewMinutes
     "please wait",
