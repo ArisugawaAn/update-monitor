@@ -1,0 +1,49 @@
+name: poc-ig-proxy
+
+# 独立 POC：验证能否用（免费/自备）代理在 GitHub Actions 中跑通 instagrapi。
+# 与生产 workflow（monitor.yml）完全独立：不读也不写 monitor_state.json，不发通知邮件。
+on:
+  workflow_dispatch:
+    inputs:
+      proxy:
+        description: "可选：仅测这一个代理（http:// 或 socks5://）。留空则自动随机取 1 个公开免费代理"
+        required: false
+        default: ""
+      dry_run:
+        description: "true = 只验证代理获取与连通性，不请求 Instagram"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  contents: read          # POC 不需要写仓库
+
+concurrency:
+  group: poc-ig-proxy     # 避免同时跑多个 POC
+  cancel-in-progress: false
+
+jobs:
+  poc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install POC deps (instagrapi + SOCKS support)
+        run: pip install -q instagrapi "requests[socks]"
+
+      - name: Run proxy POC (single attempt, no retry)
+        env:
+          # 现有 session.json 内容（不重新登录）；未配置则脚本直接结束
+          IG_POST_SESSION_JSON: ${{ secrets.IG_POST_SESSION_JSON }}
+          # 优先用本次输入；留空则用仓库 secret IG_PROXY（可留空 → 脚本自行取免费代理）
+          IG_PROXY: ${{ inputs.proxy != '' && inputs.proxy || secrets.IG_PROXY }}
+        run: python poc/ig_proxy_poc.py ${{ inputs.dry_run == 'true' && '--dry-run' || '' }}
