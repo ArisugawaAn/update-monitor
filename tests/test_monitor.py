@@ -3,6 +3,9 @@ import json
 import sys
 import time
 from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -560,6 +563,140 @@ def test_hour_sweep_does_not_bypass_cooldown(monkeypatch):
     assert ig_calls["n"] == 1                    # sweep 轮同样不发请求
     assert "冷却中" in dict(summary)["ig_post"]
     assert ok == 0 and fail == 0                 # 冷却跳过不计入成功/失败
+
+
+def test_yt_rss_ok_does_not_call_api(monkeypatch):
+    """RSS 正常 → 绝不调用 Data API（Key 配了也不打，只走 RSS 主通道）。"""
+    import requests as req
+    from monitor.sources import youtube
+    from monitor.sources import youtube_api
+    calls = {"api": 0}
+
+    class Resp:
+        status_code = 200
+        content = b"<feed/>"
+
+    monkeypatch.setattr(req, "get", lambda *a, **k: Resp())
+    monkeypatch.setattr(
+        youtube.feedparser, "parse",
+        lambda content: SimpleNamespace(
+            bozo=False, bozo_exception=None,
+            entries=[{"yt_videoid": "vid1", "title": "t1",
+                      "published": "Mon, 01 Sep 2026 00:00:00 +0000"}]))
+    monkeypatch.setattr(
+        youtube_api, "fetch_uploads",
+        lambda cid: calls.__setitem__("api", calls["api"] + 1) or [])
+    ups = youtube.check_channel("artist", "UCcUcK64JLSZAPUfG07s-Wew")
+    assert calls["api"] == 0
+    assert [u.external_id for u in ups] == ["vid1"]
+
+
+def test_yt_rss_500_falls_back_to_api(monkeypatch):
+    """RSS 500 → fallback 打一次 Data API；POC 只打印、不转 Update（返回 []）。"""
+    import requests as req
+    from monitor import config
+    from monitor.sources import youtube
+    from monitor.sources import youtube_api
+    calls = {"api": 0}
+
+    class Resp:
+        status_code = 500
+        text = "boom"
+
+    monkeypatch.setattr(config, "YOUTUBE_API_KEY", "test-key")
+    monkeypatch.setattr(req, "get", lambda *a, **k: Resp())
+
+    def fake_fetch(cid):
+        calls["api"] += 1
+        assert cid == "UCcUcK64JLSZAPUfG07s-Wew"
+        return [{"videoId": "abc", "title": "t", "publishedAt": "2026-09-01T00:00:00Z"}]
+
+    monkeypatch.setattr(youtube_api, "fetch_uploads", fake_fetch)
+    assert youtube.check_channel("artist", "UCcUcK64JLSZAPUfG07s-Wew") == []
+    assert calls["api"] == 1
+
+
+def test_yt_rss_timeout_without_key_keeps_old_behavior(monkeypatch):
+    """RSS 超时 + 未配 Key → 直接报 RSS 原始错误（与改动前一致，不碰 API）。"""
+    import requests as req
+    from monitor import config
+    from monitor.models import SourceError
+    from monitor.sources import youtube
+    from monitor.sources import youtube_api
+    calls = {"api": 0}
+    monkeypatch.setattr(config, "YOUTUBE_API_KEY", "")
+    monkeypatch.setattr(youtube_api, "fetch_uploads",
+                        lambda cid: calls.__setitem__("api", 1) or [])
+
+    def boom(*a, **k):
+        raise req.Timeout("timed out")
+
+    monkeypatch.setattr(req, "get", boom)
+    with pytest.raises(SourceError, match="RSS 请求失败"):
+        youtube.check_channel("artist", "UCcUcK64JLSZAPUfG07s-Wew")
+    assert calls["api"] == 0
+
+
+def test_yt_api_uses_uploads_playlist_not_search(monkeypatch, capsys):
+    """Data API 走 uploads playlist 路线：channels.list → playlistItems.list（无 search）。"""
+    import requests as req
+    from monitor import config
+    from monitor.sources import youtube_api
+    seen_urls: list = []
+
+    class Resp:
+        def __init__(self, payload):
+            self.status_code = 200
+            self._p = payload
+
+        def json(self):
+            return self._p
+
+    def fake_get(url, params=None, **k):
+        seen_urls.append(url)
+        if url.endswith("/channels"):
+            assert params["id"] == "UCcUcK64JLSZAPUfG07s-Wew"
+            assert params["part"] == "contentDetails"
+            return Resp({"items": [{"contentDetails": {"relatedPlaylists":
+                                                        {"uploads": "UUxxx"}}}]})
+        assert url.endswith("/playlistItems")
+        assert params["playlistId"] == "UUxxx"
+        assert params["maxResults"] == 5
+        return Resp({"items": [
+            {"snippet": {"resourceId": {"videoId": "v1"}, "title": "Hello",
+                         "publishedAt": "2026-09-10T01:02:03Z"}},
+            {"snippet": {"resourceId": {"videoId": "v2"}, "title": "World",
+                         "publishedAt": "2026-09-09T01:02:03Z"}}]})
+
+    monkeypatch.setattr(config, "YOUTUBE_API_KEY", "test-key")
+    monkeypatch.setattr(req, "get", fake_get)
+    items = youtube_api.fetch_uploads("UCcUcK64JLSZAPUfG07s-Wew")
+    assert [i["videoId"] for i in items] == ["v1", "v2"]
+    assert all("search" not in u for u in seen_urls)
+    out = capsys.readouterr().out  # POC 打印 videoId/title/publishedAt
+    assert "v1" in out and "Hello" in out and "2026-09-10T01:02:03Z" in out
+
+
+def test_yt_rss_403_does_not_fallback(monkeypatch):
+    """RSS 403（非 fallback 条件）→ 直接报错，不打 API（避免把配额浪费在权限问题上）。"""
+    import requests as req
+    from monitor import config
+    from monitor.models import SourceError
+    from monitor.sources import youtube
+    from monitor.sources import youtube_api
+    calls = {"api": 0}
+    monkeypatch.setattr(config, "YOUTUBE_API_KEY", "test-key")
+    monkeypatch.setattr(youtube_api, "fetch_uploads",
+                        lambda cid: calls.__setitem__("api", 1) or [])
+
+    class Resp:
+        status_code = 403
+        text = "forbidden"
+
+    monkeypatch.setattr(req, "get", lambda *a, **k: Resp())
+    with pytest.raises(SourceError, match="HTTP 403"):
+        youtube.check_channel("artist", "UCcUcK64JLSZAPUfG07s-Wew")
+    assert calls["api"] == 0
 
 
 def test_ig_post_follows_same_cadence_as_youtube(monkeypatch):

@@ -50,6 +50,7 @@ jobs:
           NOTIFY_TO: ${{ secrets.NOTIFY_TO }}
           NOTIFY_TITLE_PREFIX: ${{ secrets.NOTIFY_TITLE_PREFIX }}
           IG_POST_SESSION_JSON: ${{ secrets.IG_POST_SESSION_JSON }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}   # Data API v3 备用通道（POC，未配则自动跳过）
         run: python -m monitor.main
 
       - name: Health check + test email
@@ -63,6 +64,7 @@ jobs:
           NOTIFY_TO: ${{ secrets.NOTIFY_TO }}
           NOTIFY_TITLE_PREFIX: ${{ secrets.NOTIFY_TITLE_PREFIX }}
           IG_POST_SESSION_JSON: ${{ secrets.IG_POST_SESSION_JSON }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: python -m monitor.main --test-email
 
       - name: Commit state
