@@ -36,9 +36,9 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 2566,
-   "last_checked_at": 1790162472.266971,
-   "fail_streak": 542
+   "last_checked_tick": 2567,
+   "last_checked_at": 1790162767.610543,
+   "fail_streak": 543
   },
   "x": {
    "seen": [
@@ -70,8 +70,8 @@
     "2102002533896208455"
    ],
    "baselined": true,
-   "last_checked_tick": 2566,
-   "last_checked_at": 1790162472.266971,
+   "last_checked_tick": 2567,
+   "last_checked_at": 1790162767.610543,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -340,15 +340,15 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 2554,
-   "last_checked_at": 1790158870.692002,
-   "fail_streak": 51,
-   "cooldown_until_tick": 2566,
+   "last_checked_tick": 2567,
+   "last_checked_at": 1790162767.610543,
+   "fail_streak": 52,
+   "cooldown_until_tick": 2579,
    "alerts": {
     "ratelimit": true
    }
   }
  },
- "tick": 2566,
+ "tick": 2567,
  "last_sweep_hour": "2026-09-23T11"
 }
