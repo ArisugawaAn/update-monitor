@@ -35,8 +35,8 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
     """返回 (摘要, 成功源数, 失败源数)。全部失败时 main 以非零退出，让 CI 可见。
 
     频率控制（按轮次，不受 Actions 调度延迟漂移影响）：每轮 Action = 1 tick，
-    5 分钟源每轮查，10 分钟源隔 1 轮查，60 分钟源每 12 轮查。未到轮次直接跳过
-    （不发 HTTP 请求、不更新 last_checked_tick、不计入成功/失败/连续失败）。
+    5 分钟源每轮查，10 分钟源每 2 轮查，15 分钟源每 3 轮查，30 分钟源每 6 轮查。
+    未到轮次直接跳过（不发 HTTP 请求、不更新 last_checked_tick、不计入成功/失败/连续失败）。
     连续失败计数持久化在 state[fail_streak]，跨进程累计，成功清零。
     失败冷却：仅 config.COOLDOWN_SOURCES 内的源（当前 = ig_post）失败后本源跳过
     N 轮（限流类失败更久），期间不发请求、不计成功/失败、其他源完全不受影响；

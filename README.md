@@ -6,14 +6,15 @@ sends one email per new item. Runs entirely on GitHub Actions (free tier).
 
 ## Sources
 
-- Instagram (stories of the configured public accounts)
+- Instagram (stories of the configured public accounts; checked every 10 min)
 - Instagram posts/reels (private API via `instagrapi`, separate source from
   stories — needs its own session, see the secrets table below; checked every
-  10 minutes like YouTube, to stay well clear of Instagram's rate limits)
-- X / Twitter (public RSS mirrors)
+  30 minutes, to stay well clear of Instagram's rate limits)
+- X / Twitter (public RSS mirrors; main account every round, secondary
+  accounts every 15 min)
 - YouTube (official channel feeds)
 - TikTok (public profile)
-- Several official websites (HTML parsing)
+- Several official websites (HTML parsing; every 15 min)
 
 ## Setup — GitHub Secrets
 

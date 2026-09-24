@@ -205,21 +205,21 @@ def test_two_tick_source_skips_alternate_rounds(monkeypatch):
     assert calls["n"] == 1 and ok3 == 0 and "跳过" in s3[0][1]
 
 
-def test_twelve_tick_source_checks_every_12_rounds(monkeypatch):
-    """60 分钟源（每 12 轮查一次）：11 轮跳过，第 12 轮查。"""
+def test_three_tick_source_checks_every_3_rounds(monkeypatch):
+    """15 分钟源（每 3 轮查一次）：2 轮跳过，第 3 轮查。"""
     from monitor import config, main as m
     _no_save(monkeypatch)
     monkeypatch.setattr(config, "HOUR_ALIGNED_SOURCES", set())  # 本测试验证 tick 路径（整点对齐另行覆盖）
     state = _tick_state({"site_miyamoto": 100})
     src, calls = _fake_src("site_miyamoto")
-    for t in range(101, 112):
+    for t in range(101, 103):
         summary, ok, fail = m.run_once([src], state, {}, set(), tick=t)
         assert calls["n"] == 0  # 未发 HTTP 请求
         assert ok == 0 and fail == 0  # 跳过不计入成功/失败
         assert "跳过" in summary[0][1]
-    # 11 轮跳过中 last_checked_tick 保持不变
+    # 跳过轮中 last_checked_tick 保持不变
     assert state["sources"]["site_miyamoto"]["last_checked_tick"] == 100
-    summary, ok, _ = m.run_once([src], state, {}, set(), tick=112)
+    summary, ok, _ = m.run_once([src], state, {}, set(), tick=103)
     assert calls["n"] == 1 and ok == 1 and "跳过" not in summary[0][1]
 
 
@@ -227,16 +227,16 @@ def test_different_sources_have_different_intervals(monkeypatch):
     from monitor import config, main as m
     _no_save(monkeypatch)
     monkeypatch.setattr(config, "HOUR_ALIGNED_SOURCES", set())  # 本测试验证 tick 路径（整点对齐另行覆盖）
-    assert config.check_interval_ticks("ig_story") == 1
+    assert config.check_interval_ticks("ig_story") == 2
     assert config.check_interval_ticks("x") == 1
     assert config.check_interval_ticks("youtube_UCcUcK64JLSZAPUfG07s-Wew") == 2
     assert config.check_interval_ticks("tiktok_miyamoto_hiroji_") == 2
-    assert config.check_interval_ticks("site_miyamoto") == 12
-    assert config.check_interval_ticks("site_ek") == 12
-    assert config.check_interval_ticks("site_ekfc") == 12
-    assert config.check_interval_ticks("site_elephantsinc") == 12
-    assert config.check_interval_minutes("site_miyamoto") == 60  # 分钟表保留展示用
-    # 同一轮：1 轮源查、12 轮源跳过
+    assert config.check_interval_ticks("site_miyamoto") == 3
+    assert config.check_interval_ticks("site_ek") == 3
+    assert config.check_interval_ticks("site_ekfc") == 3
+    assert config.check_interval_ticks("site_elephantsinc") == 3
+    assert config.check_interval_minutes("site_miyamoto") == 15  # 分钟表保留展示用
+    # 同一轮：1 轮源查、3 轮源跳过
     state = _tick_state({"x": 100, "site_miyamoto": 100})
     sx, cx = _fake_src("x")
     ss, cs = _fake_src("site_miyamoto")
@@ -316,7 +316,7 @@ def test_skip_round_does_not_touch_fail_streak(monkeypatch):
     assert st.get_fail_streak(state, "site_miyamoto") == 3
 
 
-def test_secondary_x_accounts_registered_every_12_rounds():
+def test_secondary_x_accounts_registered_every_3_rounds():
     from monitor import config, main as m
     from monitor.sources import x_twitter
     assert config.X_USERS == ["miyamoto_hiroji", "paonews_info",
@@ -325,8 +325,8 @@ def test_secondary_x_accounts_registered_every_12_rounds():
     assert keys == ["x", "x_paonews_info", "x_hmnews_info", "x_elekashi_ofcl"]
     assert config.check_interval_ticks("x") == 1  # 主号每轮，不受影响
     for k in ("x_paonews_info", "x_hmnews_info", "x_elekashi_ofcl"):
-        assert config.check_interval_ticks(k) == 12
-        assert config.check_interval_minutes(k) == 60
+        assert config.check_interval_ticks(k) == 3
+        assert config.check_interval_minutes(k) == 15
     # 次要号 source_key 独立（去重作用域隔离）；主号旧 key 不变
     assert x_twitter.source().key == "x"
     assert x_twitter.source("paonews_info").key == "x_paonews_info"
@@ -349,15 +349,17 @@ def test_hour_sweep_forces_all_sources(monkeypatch):
     m.run_once([s_align, s_10m, s_1m], state, {}, set(), tick=101, now=now)
     assert (c_align["n"], c_10m["n"], c_1m["n"]) == (1, 1, 1)      # sweep 全查
     m.run_once([s_align, s_10m, s_1m], state, {}, set(), tick=102, now=now + 300)
-    assert (c_align["n"], c_10m["n"], c_1m["n"]) == (1, 1, 2)      # 小时内：整点源停、10 分钟源隔轮、每轮源照跑
+    assert (c_align["n"], c_10m["n"], c_1m["n"]) == (1, 1, 2)      # 小时内：15 分钟源未到期、10 分钟源隔轮、每轮源照跑
     m.run_once([s_align, s_10m, s_1m], state, {}, set(), tick=103, now=now + 3700)
     assert (c_align["n"], c_10m["n"], c_1m["n"]) == (2, 2, 3)      # 新小时 sweep：再次全查
 
 
 def test_hour_aligned_source_runs_once_per_hour(monkeypatch):
-    """整点对齐源：每自然小时第一次 tick 执行，小时内后续 tick 跳过。"""
-    from monitor import main as m
+    """整点对齐源：每自然小时第一次 tick 执行，小时内后续 tick 跳过。
+    （2026-09 起 config 已无整点对齐源，这里显式注入以覆盖机制本身。）"""
+    from monitor import config, main as m
     _no_save(monkeypatch)
+    monkeypatch.setattr(config, "HOUR_ALIGNED_SOURCES", {"site_miyamoto"})
     now = 1757802000.0
     state = _tick_state({})
     src, calls = _fake_src("site_miyamoto")
@@ -386,7 +388,7 @@ def test_checkpoint_alert_fires_once_per_incident(monkeypatch):
             raise m.CheckpointError("需要验证")
 
     m.run_once([BadSrc()], state, {}, set(), tick=1)
-    m.run_once([BadSrc()], state, {}, set(), tick=2)
+    m.run_once([BadSrc()], state, {}, set(), tick=3)  # ig_story 为 2 轮源：隔轮才检查
     assert len(sent) == 1  # 同一事件只报一次
 
     class GoodSrc:
@@ -397,10 +399,10 @@ def test_checkpoint_alert_fires_once_per_incident(monkeypatch):
         def check():
             return []
 
-    m.run_once([GoodSrc()], state, {}, set(), tick=3)  # 恢复 → 解除武装
+    m.run_once([GoodSrc()], state, {}, set(), tick=5)  # 恢复 → 解除武装
     state["sources"]["ig_story"]["alerts"]["checkpoint"] = False
 
-    m.run_once([BadSrc()], state, {}, set(), tick=4)   # 再次故障 → 再报
+    m.run_once([BadSrc()], state, {}, set(), tick=7)   # 再次故障 → 再报
     assert len(sent) == 2
 
 
@@ -438,9 +440,9 @@ def test_cooldown_config_only_covers_ig_post():
     """冷却只对 ig_post 生效：其他源 cooldown_ticks() 恒为 0（行为与改动前一致）。"""
     from monitor import config
     assert config.COOLDOWN_SOURCES == {"ig_post"}
-    # 频率与 YouTube 完全一致（10 分钟 / 隔 1 轮），与冷却机制相互独立
-    assert config.check_interval_ticks("ig_post") == 2
-    assert config.check_interval_minutes("ig_post") == 10
+    # 冷却机制与源自身频率相互独立（30 分钟 / 每 6 轮）
+    assert config.check_interval_ticks("ig_post") == 6
+    assert config.check_interval_minutes("ig_post") == 30
     assert config.is_hour_aligned("ig_post") is False  # 与 youtube 一样不参与整点对齐
     assert config.cooldown_ticks("ig_post", "SourceError: boom") == config.COOLDOWN_TICKS
     assert config.cooldown_ticks("ig_post", _RATE_LIMIT_ERR) == config.RATE_LIMIT_COOLDOWN_TICKS
@@ -518,8 +520,9 @@ def test_ordinary_ig_post_failure_uses_shorter_cooldown(monkeypatch):
     assert "冷却" in note and "限流" not in note
     assert alerts == []  # 未达 ALERT_THRESHOLD 且非限流事件 → 不报警
 
-    m.run_once([ig], state, {}, set(), tick=101 + config.COOLDOWN_TICKS + 1, now=_CD_NOW)
-    assert ig_calls["n"] == 2  # 冷却一结束就恢复检查
+    # ig_post 为 6 轮源：冷却(3 轮)结束后还需等到轮次到期（tick ≥ 107）
+    m.run_once([ig], state, {}, set(), tick=107, now=_CD_NOW)
+    assert ig_calls["n"] == 2  # 冷却结束且轮次到期 → 恢复检查
 
 
 def test_cooldown_cleared_on_success_and_rate_limit_alert_rearmed(monkeypatch):
@@ -699,8 +702,8 @@ def test_yt_rss_403_does_not_fallback(monkeypatch):
     assert calls["api"] == 0
 
 
-def test_ig_post_follows_same_cadence_as_youtube(monkeypatch):
-    """ig_post 与 youtube 同为 10 分钟源：隔 1 轮才查一次（sweep 仍会强制）。"""
+def test_ig_post_cadence_every_6_rounds(monkeypatch):
+    """ig_post 为 30 分钟源：每 6 轮才查一次（sweep 仍会强制）。"""
     from monitor import config, main as m
     _no_save(monkeypatch)
     monkeypatch.setattr(config, "HOUR_ALIGNED_SOURCES", set())  # 只验证 tick 节奏
@@ -708,9 +711,8 @@ def test_ig_post_follows_same_cadence_as_youtube(monkeypatch):
     st.set_last_checked_tick(state, "ig_post", 100)
     ig, calls = _fake_src("ig_post")
 
-    s1, ok1, _ = m.run_once([ig], state, {}, set(), tick=101)  # 间隔 1 < 2 → 跳过
+    s1, ok1, _ = m.run_once([ig], state, {}, set(), tick=101)  # 间隔 1 < 6 → 跳过
     assert calls["n"] == 0 and ok1 == 0 and "跳过" in s1[0][1]
-    s2, ok2, _ = m.run_once([ig], state, {}, set(), tick=102)  # 间隔 2 → 检查
+    s2, ok2, _ = m.run_once([ig], state, {}, set(), tick=106)  # 间隔 6 → 检查
     assert calls["n"] == 1 and ok2 == 1
-    assert config.check_interval_ticks("ig_post") == \
-        config.check_interval_ticks("youtube_UCcUcK64JLSZAPUfG07s-Wew")
+    assert config.check_interval_ticks("ig_post") == 6

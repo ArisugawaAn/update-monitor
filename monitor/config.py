@@ -19,7 +19,7 @@ IG_ACCOUNTS = [  # (用户名, 用户ID) —— ID 永久不变，POC 已实测
 IG_WEB_APP_ID = "936619743392459"
 
 # ---- Instagram Post/Reel（instagrapi 私有 API，与 Story 源分离） ----------
-# 频率：与 YouTube 同为 10 分钟源（CHECK_INTERVAL_TICKS = 2）；失败后另见 COOLDOWN_*。
+# 频率：30 分钟源（CHECK_INTERVAL_TICKS = 6）；失败后另见 COOLDOWN_*。
 IG_POST_ACCOUNTS = [  # (用户名, 用户ID)
     ("miyamoto_doppo", 10584438821),
     ("elephantsinc_official", 66821998949),
@@ -65,53 +65,44 @@ TIKTOK_ACCOUNTS = [
 
 # ---- 检查频率：Cloudflare 每 ~5 分钟触发一轮 Action（延迟不可避免）。
 #   为避免墙钟漂移漏查，改为按轮次计数（每轮 Action = 1 tick）：
-#   5 分钟源每轮查，10 分钟源隔 1 轮查（youtube / tiktok / ig_post），
-#   60 分钟源每 12 轮查。
+#   5 分钟源每轮查，10 分钟源每 2 轮查，15 分钟源每 3 轮查，30 分钟源每 6 轮查。
 CHECK_INTERVAL_MINUTES = {  # 保留：人类可读的期望 cadence（实际门控用下面的轮次）
-    "ig_story": 5,
-    "ig_post": 10,  # 与 YouTube 同频（私有 API：降频以降低被 IG 限流/封禁的风险）
+    "ig_story": 10,
+    "ig_post": 30,  # 私有 API：进一步降频以降低被 IG 限流/封禁的风险
     "x": 5,
-    "x_paonews_info": 60,
-    "x_hmnews_info": 60,
-    "x_elekashi_ofcl": 60,
-    "site_miyamoto": 60,
-    "site_ek": 60,
-    "site_ekfc": 60,
-    "site_elephantsinc": 60,
+    "x_paonews_info": 15,
+    "x_hmnews_info": 15,
+    "x_elekashi_ofcl": 15,
+    "site_miyamoto": 15,
+    "site_ek": 15,
+    "site_ekfc": 15,
+    "site_elephantsinc": 15,
 }
 YOUTUBE_CHECK_INTERVAL_MINUTES = 10  # youtube_<channel_id> 前缀匹配
 TIKTOK_CHECK_INTERVAL_MINUTES = 10  # tiktok_<handle> 前缀匹配
 DEFAULT_CHECK_INTERVAL_MINUTES = 5  # 未知新源的兜底：保持最高频率
 
 CHECK_INTERVAL_TICKS = {  # 实际门控：每 N 轮查一次
-    "ig_story": 1,
-    "ig_post": 2,  # 与 YouTube 同频：隔 1 轮（≈10 分钟）查；失败后由下面的 COOLDOWN_* 进一步降频
+    "ig_story": 2,  # ≈10 分钟（私有 API 会话：降频降低风控压力）
+    "ig_post": 6,  # ≈30 分钟；失败后由下面的 COOLDOWN_* 进一步降频
     "x": 1,  # 主号 @miyamoto_hiroji：每轮查，不受次要号影响
-    "x_paonews_info": 12,  # 次要 X 号：每 12 轮（≈60 分钟）查
-    "x_hmnews_info": 12,
-    "x_elekashi_ofcl": 12,
-    "site_miyamoto": 12,
-    "site_ek": 12,
-    "site_ekfc": 12,
-    "site_elephantsinc": 12,
+    "x_paonews_info": 3,  # 次要 X 号：每 3 轮（≈15 分钟）查
+    "x_hmnews_info": 3,
+    "x_elekashi_ofcl": 3,
+    "site_miyamoto": 3,
+    "site_ek": 3,
+    "site_ekfc": 3,
+    "site_elephantsinc": 3,
 }
 YOUTUBE_CHECK_INTERVAL_TICKS = 2  # youtube_<channel_id> 前缀匹配
 TIKTOK_CHECK_INTERVAL_TICKS = 2  # tiktok_<handle> 前缀匹配
 DEFAULT_CHECK_INTERVAL_TICKS = 1  # 未知新源的兜底：每轮都查
 
 # ---- 整点对齐 --------------------------------------------------------------
-# 这些源不再按"距上次检查满 N 轮"触发，而是**每个自然小时的第一次 tick** 检查：
-# 例如 19:00 起的第一个 tick（受 Actions 调度影响可能自然顺延到 19:01~19:05，
-# 不刻意延后）所有整点源 + 每轮源一起跑完；本小时内后续 tick 跳过。
-HOUR_ALIGNED_SOURCES = {
-    "x_paonews_info",
-    "x_hmnews_info",
-    "x_elekashi_ofcl",
-    "site_miyamoto",
-    "site_ek",
-    "site_ekfc",
-    "site_elephantsinc",
-}
+# 命中的源不再按"距上次检查满 N 轮"触发，而是**每个自然小时的第一次 tick** 检查
+# （例如 19:00 起的第一个 tick，受 Actions 调度影响可能自然顺延到 19:01~19:05）。
+# 2026-09 起次要 X 号与网站源改为 15 分钟轮询，已全部移出该表；机制保留备用。
+HOUR_ALIGNED_SOURCES: set[str] = set()
 
 
 def is_hour_aligned(key: str) -> bool:
@@ -142,7 +133,7 @@ def check_interval_ticks(key: str) -> int:
 
 # ---- 故障报警 --------------------------------------------------------------
 # 连续“检查轮次”失败 N 次发一封（只在检查轮计数，跳过轮不计数）。
-# 时间含义：5 分钟源 6 轮 ≈ 30 分钟；10 分钟源 ≈ 60 分钟；60 分钟源 ≈ 6 小时。
+# 时间含义：5 分钟源 6 轮 ≈ 30 分钟；10 分钟源 ≈ 60 分钟；15 分钟源 ≈ 90 分钟。
 ALERT_THRESHOLD = 6
 
 # ---- 失败冷却（只对列出的源生效；其他源行为与改动前完全一致） ------------------
