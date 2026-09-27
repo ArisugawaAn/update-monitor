@@ -66,3 +66,10 @@ after recovery), and an hourly sweep does not bypass it. Every other source
 keeps its normal cadence. Tune it in `monitor/config.py` (`COOLDOWN_SOURCES`,
 `COOLDOWN_TICKS`, `RATE_LIMIT_COOLDOWN_TICKS`, `RATE_LIMIT_MARKERS`); sources
 not listed there behave exactly as before.
+
+Silent-blindness guard (story source): Instagram answers an *unauthenticated*
+request with a clean-but-empty JSON (`{"reels": {}, "status": "ok"}`) instead of
+an error, while an authenticated response always carries a `reels_media` key.
+The story source fails loudly (alert email within ~1 hour) when that marker is
+missing, instead of silently reporting zero stories — the 2026-09-24/27 outage
+(a dead cookie looking "healthy" for 3 days) is exactly what this prevents.

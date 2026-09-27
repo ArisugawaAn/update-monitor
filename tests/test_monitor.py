@@ -861,6 +861,55 @@ def test_notify_prefix_ig_story_by_account(monkeypatch):
     assert config.notify_prefix("ig_story", "new_account") == "更新通知"  # 未登记 → 回退
 
 
+# ---------------- ig_story 会话有效性判据（防静默失明，2026-09 事故） ----------------
+
+class _IgStoryResp:
+    def __init__(self, payload):
+        self.status_code = 200
+        self._payload = payload
+        self.text = ""
+
+    def json(self):
+        return self._payload
+
+
+def _ig_story_check_with(monkeypatch, payload):
+    from monitor.sources import ig_story
+    monkeypatch.setattr(ig_story, "_session", lambda: SimpleNamespace(
+        get=lambda *a, **k: _IgStoryResp(payload)))
+    return ig_story.check()
+
+
+def test_ig_story_anonymous_empty_response_is_failure(monkeypatch):
+    """匿名空响应（无 reels_media 键）= 会话已失效 → 必须报错，不得静默返回 0 条。"""
+    import pytest
+    from monitor.models import SourceError
+    with pytest.raises(SourceError, match="会话失效"):
+        _ig_story_check_with(monkeypatch, {"reels": {}, "status": "ok"})
+
+
+def test_ig_story_authenticated_response_passes(monkeypatch):
+    """登录响应（含 reels_media 键）正常解析：空 = 0 条，有 item = 转 Update。"""
+    payload = {"reels": {"71496324324": {"items": [
+        {"pk": "123", "media_type": 1, "taken_at": 1759000000,
+         "image_versions2": {"candidates": [{"url": "http://img/1.jpg"}]}},
+    ]}}, "reels_media": [], "status": "ok"}
+    ups = _ig_story_check_with(monkeypatch, payload)
+    assert [u.external_id for u in ups] == ["123"]
+    assert ups[0].account_name == "h.m.staff"
+    assert ups[0].media_urls == ["http://img/1.jpg"]
+
+    ups_empty = _ig_story_check_with(monkeypatch, {"reels": {}, "reels_media": [], "status": "ok"})
+    assert ups_empty == []
+
+
+def test_ig_story_legacy_nested_data_shape_passes(monkeypatch):
+    """旧形态（reels 嵌套在 data 下、reels_media 也在 data 下）同样被认作已登录。"""
+    payload = {"data": {"reels": {}, "reels_media": []}, "status": "ok"}
+    ups = _ig_story_check_with(monkeypatch, payload)
+    assert ups == []
+
+
 def test_notify_prefix_fallback_env(monkeypatch):
     """未登记的源：回退 NOTIFY_TITLE_PREFIX 环境变量；未设置时用默认值。"""
     from monitor import config

@@ -66,6 +66,13 @@ def check() -> list[Update]:
             raise SourceError("账号行为标记仍在(feedback_required)")
         raise SourceError(f"HTTP {r.status_code}")
     data = r.json()
+    # 会话有效性判据（2026-09-27 A/B 实测）：IG 对未登录请求返回"干净的空
+    # 响应"（顶层只有 reels/status），登录会话的响应必带 reels_media 键。
+    # 缺失 = 本 Cookie 已不被承认 → 立即报错触发报警，绝不静默返回"成功 0 条"
+    # （2026-09-24~27 曾因此失明 3 天而看似正常）。
+    if "reels_media" not in data and "reels_media" not in (data.get("data") or {}):
+        raise SourceError("会话失效：IG 返回未登录的匿名空响应（无 reels_media 标记）"
+                          "——请重新导出 Cookie 并更新 IG_COOKIE")
     reels = (data.get("data") or {}).get("reels") or data.get("reels") or {}
     name_by_id = {str(uid): name for name, uid in config.IG_ACCOUNTS}
     out: list[Update] = []
