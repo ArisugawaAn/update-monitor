@@ -50,7 +50,11 @@ def _session() -> requests.Session:
     return s2
 
 
+_LAST_AUTH: bool | None = None  # 最近一次 check 的会话判定（test-email 健康检查展示用）
+
+
 def check() -> list[Update]:
+    global _LAST_AUTH
     s = _session()
     ids = [uid for _, uid in config.IG_ACCOUNTS]
     try:
@@ -70,7 +74,8 @@ def check() -> list[Update]:
     # 响应"（顶层只有 reels/status），登录会话的响应必带 reels_media 键。
     # 缺失 = 本 Cookie 已不被承认 → 立即报错触发报警，绝不静默返回"成功 0 条"
     # （2026-09-24~27 曾因此失明 3 天而看似正常）。
-    if "reels_media" not in data and "reels_media" not in (data.get("data") or {}):
+    _LAST_AUTH = "reels_media" in data or "reels_media" in (data.get("data") or {})
+    if not _LAST_AUTH:
         raise SourceError("会话失效：IG 返回未登录的匿名空响应（无 reels_media 标记）"
                           "——请重新导出 Cookie 并更新 IG_COOKIE")
     reels = (data.get("data") or {}).get("reels") or data.get("reels") or {}
@@ -104,6 +109,16 @@ def check() -> list[Update]:
     return out
 
 
+def health_note() -> str:
+    """test-email 健康检查的会话状态说明（基于最近一次 check 的响应判据）。"""
+    if _LAST_AUTH:
+        return "｜已登录✓ 会话有效（响应含 reels_media 标记）"
+    if _LAST_AUTH is False:
+        return "｜⚠ 未登录，Cookie 已失效"
+    return ""  # 本进程尚未跑过 check
+
+
 def source():
     from types import SimpleNamespace
-    return SimpleNamespace(key="ig_story", platform="instagram", check=check)
+    return SimpleNamespace(key="ig_story", platform="instagram", check=check,
+                           health_note=health_note)

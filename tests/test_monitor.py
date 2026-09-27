@@ -910,6 +910,34 @@ def test_ig_story_legacy_nested_data_shape_passes(monkeypatch):
     assert ups == []
 
 
+def test_ig_story_health_note_reflects_session(monkeypatch):
+    """health_note 展示最近一次 check 的会话判定：已登录✓ / 未登录⚠。"""
+    from monitor.sources import ig_story
+    _ig_story_check_with(monkeypatch, {"reels": {}, "reels_media": [], "status": "ok"})
+    assert "已登录✓" in ig_story.health_note()
+    with pytest.raises(SourceError, match="会话失效"):
+        _ig_story_check_with(monkeypatch, {"reels": {}, "status": "ok"})
+    assert "未登录" in ig_story.health_note()
+
+
+def test_health_check_line_shows_session_status(monkeypatch):
+    """test-email 健康检查：ig_story 正常行附会话状态，失效行直接可见。"""
+    from monitor import main as m
+    from monitor.sources import ig_story
+    sent: dict = {}
+    monkeypatch.setattr(m.email, "send_test", lambda lines: sent.update(lines=lines) or True)
+    src = ig_story.source()
+
+    _ig_story_check_with(monkeypatch, {"reels": {}, "reels_media": [], "status": "ok"})
+    m.health_check([src])
+    assert any("ig_story" in l and "会话有效" in l for l in sent["lines"])
+
+    monkeypatch.setattr(ig_story, "_session", lambda: SimpleNamespace(
+        get=lambda *a, **k: _IgStoryResp({"reels": {}, "status": "ok"})))
+    m.health_check([src])
+    assert any("ig_story" in l and "会话失效" in l for l in sent["lines"])
+
+
 def test_notify_prefix_fallback_env(monkeypatch):
     """未登记的源：回退 NOTIFY_TITLE_PREFIX 环境变量；未设置时用默认值。"""
     from monitor import config

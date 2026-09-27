@@ -140,16 +140,23 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
 
 
 def health_check(sources: list) -> int:
-    """健康检查：逐源探测（不写状态、不发通知）+ 发送测试邮件验证通路。"""
+    """健康检查：逐源探测（不写状态、不发通知）+ 发送测试邮件验证通路。
+
+    源若提供 health_note()（如 ig_story 的会话状态），追加在正常行后面，
+    让"看起来正常"和"真的看得见"可区分（2026-09 静默失明事故的教训）。
+    """
     lines: list[str] = []
     ok = 0
     for src in sources:
         try:
             updates = src.check()
-            lines.append(f"{src.key:<22} 正常，在场 {len(updates)} 条")
-            ok += 1
         except Exception as e:
             lines.append(f"{src.key:<22} 异常: {type(e).__name__}: {e}"[:600])
+            continue
+        note = getattr(src, "health_note", None)
+        suffix = f" {note()}" if callable(note) else ""
+        lines.append(f"{src.key:<22} 正常，在场 {len(updates)} 条{suffix}")
+        ok += 1
     sent = email.send_test(lines)
     print(f"数据源健康: {ok}/{len(sources)} 正常")
     print("测试邮件:", "已发送（查收邮箱/微信）" if sent else "发送失败")
