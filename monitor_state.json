@@ -70,8 +70,8 @@
     "2102002533896208455"
    ],
    "baselined": true,
-   "last_checked_tick": 3816,
-   "last_checked_at": 1790529629.205366,
+   "last_checked_tick": 3817,
+   "last_checked_at": 1790529929.561491,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -349,6 +349,6 @@
    }
   }
  },
- "tick": 3816,
+ "tick": 3817,
  "last_sweep_hour": "2026-09-27T17"
 }
