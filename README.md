@@ -29,7 +29,10 @@ sends one email per new item. Runs entirely on GitHub Actions (free tier).
 | `NOTIFY_TO` | recipient email address |
 | `YOUTUBE_API_KEY` | YouTube Data API v3 key for the feed fallback (optional) |
 
-Optional: `NOTIFY_TITLE_PREFIX` — prefix used in notification email subjects.
+Optional: `NOTIFY_TITLE_PREFIX` — subject prefix for sources not explicitly
+mapped in `monitor/config.py` (`NOTIFY_PREFIX` / `NOTIFY_PREFIX_BY_ACCOUNT`:
+宮本浩次-related → 宮本浩次, Elephant Kashimashi (band site/FC, `@elekashi_ofcl`,
+`@paonews_info`) → エレカシ, elephants-inc → elephants).
 
 ## Operations
 

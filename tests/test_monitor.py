@@ -726,3 +726,67 @@ def test_ig_post_cadence_every_6_rounds(monkeypatch):
     s2, ok2, _ = m.run_once([ig], state, {}, set(), tick=106)  # 间隔 6 → 检查
     assert calls["n"] == 1 and ok2 == 1
     assert config.check_interval_ticks("ig_post") == 6
+
+
+# ---------------- 邮件主题前缀（按来源区分 人物/团体） ----------------
+
+def test_notify_prefix_by_source_key():
+    """X/YouTube/TikTok/官网/IG Post：按 source_key 直接映射前缀。"""
+    from monitor import config
+    cases = {
+        "x": "宮本浩次",                     # 主号
+        "x_paonews_info": "エレカシ",         # pao 算エレカシ
+        "x_hmnews_info": "宮本浩次",          # hm 算宮本浩次
+        "x_elekashi_ofcl": "エレカシ",
+        "youtube_UCcUcK64JLSZAPUfG07s-Wew": "宮本浩次",  # artist 频道
+        "youtube_UCT9b7yx6qEl0q994k4s6IEw": "エレカシ",  # band 频道
+        "tiktok_miyamoto_hiroji_": "宮本浩次",
+        "site_miyamoto": "宮本浩次",
+        "site_ek": "エレカシ",
+        "site_ekfc": "エレカシ",
+        "site_elephantsinc": "elephants",
+        "ig_post_miyamoto_doppo": "宮本浩次",
+        "ig_post_h.m.staff": "宮本浩次",
+        "ig_post_elephantsinc_official": "elephants",
+    }
+    for key, want in cases.items():
+        assert config.notify_prefix(key) == want, key
+
+
+def test_notify_prefix_ig_story_by_account(monkeypatch):
+    """ig_story 三账号共用 key：按 account_name 区分；未登记账号回退环境变量。"""
+    from monitor import config
+    monkeypatch.delenv("NOTIFY_TITLE_PREFIX", raising=False)
+    assert config.notify_prefix("ig_story", "miyamoto_doppo") == "宮本浩次"
+    assert config.notify_prefix("ig_story", "h.m.staff") == "宮本浩次"
+    assert config.notify_prefix("ig_story", "elephantsinc_official") == "elephants"
+    assert config.notify_prefix("ig_story", "@h.m.staff") == "宮本浩次"  # 容错带 @
+    assert config.notify_prefix("ig_story", "new_account") == "更新通知"  # 未登记 → 回退
+
+
+def test_notify_prefix_fallback_env(monkeypatch):
+    """未登记的源：回退 NOTIFY_TITLE_PREFIX 环境变量；未设置时用默认值。"""
+    from monitor import config
+    monkeypatch.delenv("NOTIFY_TITLE_PREFIX", raising=False)
+    assert config.notify_prefix("unknown_source") == "更新通知"
+    monkeypatch.setenv("NOTIFY_TITLE_PREFIX", "宮本浩次")
+    assert config.notify_prefix("unknown_source") == "宮本浩次"
+
+
+def test_email_subject_uses_per_source_prefix():
+    """端到端：Update → _render() 主题前缀按来源区分，平台标签不变。"""
+    from monitor.notification import email
+
+    def mk(key, name):
+        return Update(source_key=key, platform="x", account_name=name,
+                      content_type="tweet", external_id="1", title="新推文")
+
+    assert email._render(mk("x", "@miyamoto_hiroji"))[0] == "【宮本浩次｜X】新推文"
+    assert email._render(mk("x_paonews_info", "@paonews_info"))[0] == "【エレカシ｜X】新推文"
+    assert email._render(mk("x_elekashi_ofcl", "@elekashi_ofcl"))[0] == "【エレカシ｜X】新推文"
+    assert email._render(mk("x_hmnews_info", "@hmnews_info"))[0] == "【宮本浩次｜X】新推文"
+
+    story = Update(source_key="ig_story", platform="instagram",
+                   account_name="elephantsinc_official", content_type="story",
+                   external_id="pk1")
+    assert email._render(story)[0].startswith("【elephants｜Instagram Story】")

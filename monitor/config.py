@@ -27,6 +27,11 @@ IG_POST_ACCOUNTS = [  # (用户名, 用户ID)
 ]
 IG_POST_SESSION_JSON = os.environ.get("IG_POST_SESSION_JSON", "")  # Actions: session.json 完整内容
 
+# ---- Instagram Post/Reel 官方通道（POC，Graph API business_discovery） -------
+# 动机：instagrapi 私有 API 易封号；官方通道 token 宿主号零风险。见 sources/ig_graph.py。
+IG_GRAPH_TOKEN = os.environ.get("IG_GRAPH_TOKEN", "")  # 长效 access token；空 = 未启用
+IG_GRAPH_USER_ID = os.environ.get("IG_GRAPH_USER_ID", "")  # 可选：token 宿主 IG 号 ID；留空自动解析
+
 # ---- X（已 POC 验证，完全无账号） ----------------------------------------
 X_USERS = [  # 按优先级排列：主号在前；每个账号 = 独立 source（独立去重/频率/报警）
     "miyamoto_hiroji",  # 最重要：每轮查
@@ -62,6 +67,53 @@ YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
 TIKTOK_ACCOUNTS = [
     ("miyamoto_hiroji_", "MS4wLjABAAAAI_uFHmmcaJqxDN6W2Ve-FWRXWI3Lovy8-0xEksEXiqG3_htnn6Lnd0zSB7IhQQpN"),
 ]
+
+# ---- 邮件主题前缀（按来源区分人物/团体） -----------------------------------
+# 主题形如【{前缀}｜{平台}】预览。归属：宮本浩次个人相关 → 宮本浩次；
+# エレカシ（乐队官网/FC/官方号/pao 新闻号）→ エレカシ；
+# 经纪公司 elephants-inc 相关 → elephants。未登记的源回退 NOTIFY_TITLE_PREFIX。
+NOTIFY_PREFIX_MIYAMOTO = "宮本浩次"
+NOTIFY_PREFIX_EK = "エレカシ"
+NOTIFY_PREFIX_ELEPHANTS = "elephants"
+NOTIFY_PREFIX = {  # source_key → 前缀
+    # X（主号 key 固定为 "x"，见 x_twitter.py）
+    "x": NOTIFY_PREFIX_MIYAMOTO,
+    "x_paonews_info": NOTIFY_PREFIX_EK,
+    "x_hmnews_info": NOTIFY_PREFIX_MIYAMOTO,
+    "x_elekashi_ofcl": NOTIFY_PREFIX_EK,
+    # YouTube（key = youtube_<channel_id>；config.YOUTUBE_CHANNELS 顺序 artist/band）
+    f"youtube_{YOUTUBE_CHANNELS[0][1]}": NOTIFY_PREFIX_MIYAMOTO,
+    f"youtube_{YOUTUBE_CHANNELS[1][1]}": NOTIFY_PREFIX_EK,
+    # TikTok
+    f"tiktok_{TIKTOK_ACCOUNTS[0][0]}": NOTIFY_PREFIX_MIYAMOTO,
+    # 官网
+    "site_miyamoto": NOTIFY_PREFIX_MIYAMOTO,
+    "site_ek": NOTIFY_PREFIX_EK,
+    "site_ekfc": NOTIFY_PREFIX_EK,
+    "site_elephantsinc": NOTIFY_PREFIX_ELEPHANTS,
+    # IG Post/Reel（每账号独立 key，见 ig_post.py）
+    f"ig_post_{IG_ACCOUNTS[0][0]}": NOTIFY_PREFIX_MIYAMOTO,
+    f"ig_post_{IG_ACCOUNTS[2][0]}": NOTIFY_PREFIX_MIYAMOTO,
+    f"ig_post_{IG_ACCOUNTS[1][0]}": NOTIFY_PREFIX_ELEPHANTS,
+}
+# ig_story 三账号共用一个 key，按 account_name 区分（handle 不带 @）
+NOTIFY_PREFIX_BY_ACCOUNT = {
+    IG_ACCOUNTS[0][0]: NOTIFY_PREFIX_MIYAMOTO,
+    IG_ACCOUNTS[2][0]: NOTIFY_PREFIX_MIYAMOTO,
+    IG_ACCOUNTS[1][0]: NOTIFY_PREFIX_ELEPHANTS,
+}
+
+
+def notify_prefix(source_key: str, account_name: str = "") -> str:
+    """某条 Update 的邮件主题前缀。未登记的源回退 NOTIFY_TITLE_PREFIX 环境变量。"""
+    if source_key == "ig_story":
+        name = (account_name or "").lstrip("@")
+        if name in NOTIFY_PREFIX_BY_ACCOUNT:
+            return NOTIFY_PREFIX_BY_ACCOUNT[name]
+    if source_key in NOTIFY_PREFIX:
+        return NOTIFY_PREFIX[source_key]
+    return os.environ.get("NOTIFY_TITLE_PREFIX", "更新通知")
+
 
 # ---- 检查频率：Cloudflare 每 ~5 分钟触发一轮 Action（延迟不可避免）。
 #   为避免墙钟漂移漏查，改为按轮次计数（每轮 Action = 1 tick）：

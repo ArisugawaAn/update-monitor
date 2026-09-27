@@ -11,6 +11,7 @@ from email.header import Header
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+from monitor import config
 from monitor.models import Update
 
 PLATFORM_LABEL = {
@@ -28,10 +29,6 @@ PLATFORM_LABEL = {
 def _configured() -> bool:
     return bool(os.environ.get("SMTP_USER") and os.environ.get("SMTP_PASS")
                 and os.environ.get("NOTIFY_TO"))
-
-
-def _prefix() -> str:
-    return os.environ.get("NOTIFY_TITLE_PREFIX", "更新通知")
 
 
 def _preview(u: Update) -> str:
@@ -127,7 +124,7 @@ def _render_plain(u: Update, label: str) -> str:
 def _render(u: Update) -> tuple[str, str, str]:
     """返回 (subject, plain_text, html_body)。"""
     label = PLATFORM_LABEL.get((u.platform, u.content_type), u.platform)
-    prefix = _prefix()
+    prefix = config.notify_prefix(u.source_key, u.account_name)
     preview = _preview(u)
     subject = f"【{prefix}｜{label}】{preview}"
     return subject, _render_plain(u, label), _render_html(u, label)
