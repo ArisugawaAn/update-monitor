@@ -712,6 +712,103 @@ def test_yt_rss_403_does_not_fallback(monkeypatch):
     assert calls["api"] == 0
 
 
+def test_ig_graph_available_gate(monkeypatch):
+    """Token 未配置 → available() False（调用方直接跳过）；配置后 True。"""
+    from monitor import config
+    from monitor.sources import ig_graph
+    monkeypatch.setattr(config, "IG_GRAPH_TOKEN", "")
+    assert ig_graph.available() is False
+    monkeypatch.setattr(config, "IG_GRAPH_TOKEN", "tok")
+    assert ig_graph.available() is True
+
+
+def test_ig_graph_resolves_own_id_via_me_accounts(monkeypatch):
+    """未显式配置 IG_GRAPH_USER_ID 时，经 /me/accounts 解析 token 宿主 IG 号。"""
+    import requests as req
+    from monitor import config
+    from monitor.sources import ig_graph
+
+    class Resp:
+        status_code = 200
+
+        def json(self):
+            return {"data": [{"id": "page1",
+                              "instagram_business_account": {"id": "17841"}}]}
+
+    monkeypatch.setattr(config, "IG_GRAPH_TOKEN", "tok")
+    monkeypatch.setattr(config, "IG_GRAPH_USER_ID", "")
+    seen: dict = {}
+
+    def fake_get(url, params=None, **k):
+        seen["url"], seen["params"] = url, params
+        return Resp()
+
+    monkeypatch.setattr(req, "get", fake_get)
+    assert ig_graph.resolve_own_ig_id() == "17841"
+    assert seen["url"].endswith("/me/accounts")
+    assert seen["params"]["access_token"] == "tok"
+
+
+def test_ig_graph_business_discovery_shape(monkeypatch, capsys):
+    """business_discovery 请求形状：media.limit(5)、token 鉴权、无任何登录态；打印要素。"""
+    import requests as req
+    from monitor import config
+    from monitor.sources import ig_graph
+
+    class Resp:
+        status_code = 200
+
+        def json(self):
+            return {"business_discovery": {"id": "17841", "username": "miyamoto_doppo",
+                    "media": {"data": [
+                        {"id": "m1", "media_type": "VIDEO",
+                         "media_product_type": "REELS",
+                         "timestamp": "2026-09-20T10:00:00+0000",
+                         "caption": "new reel", "permalink": "https://instagram.com/reel/x/",
+                         "media_url": "http://v.mp4", "thumbnail_url": "http://t.jpg"},
+                        {"id": "m2", "media_type": "CAROUSEL_ALBUM",
+                         "timestamp": "2026-09-19T10:00:00+0000",
+                         "permalink": "https://instagram.com/p/y/"}]}}}
+
+    monkeypatch.setattr(config, "IG_GRAPH_TOKEN", "tok")
+    monkeypatch.setattr(config, "IG_GRAPH_USER_ID", "17841")
+    seen: dict = {}
+
+    def fake_get(url, params=None, **k):
+        seen["url"], seen["params"] = url, params
+        return Resp()
+
+    monkeypatch.setattr(req, "get", fake_get)
+    items = ig_graph.fetch_user_media("miyamoto_doppo")
+    assert seen["url"].endswith("/17841")
+    f = seen["params"]["fields"]
+    assert f.startswith("business_discovery.username(miyamoto_doppo)")
+    assert "media.limit(5)" in f and "media_product_type" in f
+    assert seen["params"]["access_token"] == "tok"
+    assert "sessionid" not in str(seen) and "ds_user_id" not in str(seen)
+    assert [i["id"] for i in items] == ["m1", "m2"]
+    assert items[0]["productType"] == "REELS" and items[1]["productType"] == ""
+    out = capsys.readouterr().out  # POC 打印 id/类型/时间/caption
+    assert "m1" in out and "REELS" in out and "new reel" in out
+
+
+def test_ig_graph_error_raises(monkeypatch):
+    """Graph 非 200 → RuntimeError 带状态码（将来接线时转 SourceError 走报警）。"""
+    import requests as req
+    from monitor import config
+    from monitor.sources import ig_graph
+
+    class Resp:
+        status_code = 400
+        text = '{"error": {"message": "code 190", "type": "OAuthException"}}'
+
+    monkeypatch.setattr(config, "IG_GRAPH_TOKEN", "tok")
+    monkeypatch.setattr(config, "IG_GRAPH_USER_ID", "17841")
+    monkeypatch.setattr(req, "get", lambda *a, **k: Resp())
+    with pytest.raises(RuntimeError, match="HTTP 400"):
+        ig_graph.fetch_user_media("miyamoto_doppo")
+
+
 def test_ig_post_cadence_every_6_rounds(monkeypatch):
     """ig_post 为 30 分钟源：每 6 轮才查一次（sweep 仍会强制）。"""
     from monitor import config, main as m
