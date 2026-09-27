@@ -12,7 +12,9 @@ sends one email per new item. Runs entirely on GitHub Actions (free tier).
   30 minutes, to stay well clear of Instagram's rate limits)
 - X / Twitter (public RSS mirrors; main account every round, secondary
   accounts every 15 min)
-- YouTube (official channel feeds)
+- YouTube (official channel feeds; if a feed fails with 404/500/timeout the
+  source falls back to YouTube Data API v3 uploads-playlist and notifies the
+  same way — needs the `YOUTUBE_API_KEY` secret, skipped silently if unset)
 - TikTok (public profile)
 - Several official websites (HTML parsing; every 15 min)
 
@@ -25,6 +27,7 @@ sends one email per new item. Runs entirely on GitHub Actions (free tier).
 | `SMTP_USER` | sender email account |
 | `SMTP_PASS` | sender SMTP app-password |
 | `NOTIFY_TO` | recipient email address |
+| `YOUTUBE_API_KEY` | YouTube Data API v3 key for the feed fallback (optional) |
 
 Optional: `NOTIFY_TITLE_PREFIX` — prefix used in notification email subjects.
 

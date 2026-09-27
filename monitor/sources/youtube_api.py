@@ -1,4 +1,4 @@
-"""YouTube Data API v3 备用通道（POC，仅 fallback 用，不改变 RSS 主通道）。
+"""YouTube Data API v3 备用通道（RSS 挂时的正式备用数据源，与 RSS 同构）。
 
 调用链（quota 友好，禁用 search.list）：
   1. channels.list(part=contentDetails, id=<cid>) → uploads playlistId   [1 unit]
@@ -7,7 +7,7 @@
 
 设计约束：
   - API Key 只从环境变量 YOUTUBE_API_KEY 读取，绝不写入代码
-  - POC 阶段只打印/记录 videoId、title、publishedAt，不构造 Update、不接入通知
+  - 结果交由 youtube.py 转为 Update，与 RSS 路线共用同一套去重/通知
   - RSS 正常时调用方不得调用本模块（由 youtube.py 的 fallback 条件保证）
 """
 from __future__ import annotations
@@ -18,7 +18,7 @@ from monitor import config
 
 _API = "https://www.googleapis.com/youtube/v3"
 _TIMEOUT = 20
-_FETCH_COUNT = 5  # POC：每频道最近 5 个视频
+_FETCH_COUNT = 5  # 备用通道：每频道最近 5 个视频（external_id 与 RSS 一致，去重无缝衔接）
 
 
 def available() -> bool:
@@ -36,7 +36,7 @@ def _get(path: str, params: dict) -> dict:
 
 
 def fetch_uploads(cid: str) -> list[dict]:
-    """返回 [{videoId, title, publishedAt}]（按发布时间倒序，最多 5 条）。
+    """返回最近 5 个视频 [{videoId, title, publishedAt, description, thumbnail}]。
 
     前置：调用方已确认 RSS 失败且本函数 available() 为 True。
     任何异常直接上抛，由 youtube.check_channel 转为 SourceError。
@@ -58,9 +58,11 @@ def fetch_uploads(cid: str) -> list[dict]:
         rid = (sn.get("resourceId") or {}).get("videoId") or ""
         if not rid:
             continue
-        out.append({"videoId": rid, "title": (sn.get("title") or "").strip(),
-                    "publishedAt": sn.get("publishedAt") or ""})
-        # POC 可观察性：打印三要素（videoId/title/publishedAt），确认通道正常
-        print(f"    [yt-api] {rid} | {sn.get('publishedAt') or '-'} | "
-              f"{(sn.get('title') or '').strip()[:60]}")
+        thumbs = sn.get("thumbnails") or {}
+        thumb = ((thumbs.get("medium") or thumbs.get("default")) or {}).get("url", "")
+        out.append({"videoId": rid,
+                    "title": (sn.get("title") or "").strip(),
+                    "publishedAt": sn.get("publishedAt") or "",
+                    "description": (sn.get("description") or "").strip(),
+                    "thumbnail": thumb})
     return out

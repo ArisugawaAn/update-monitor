@@ -595,7 +595,7 @@ def test_yt_rss_ok_does_not_call_api(monkeypatch):
 
 
 def test_yt_rss_500_falls_back_to_api(monkeypatch):
-    """RSS 500 → fallback 打一次 Data API；POC 只打印、不转 Update（返回 []）。"""
+    """RSS 500 → fallback 打一次 Data API；结果转 Update 走正常去重/通知。"""
     import requests as req
     from monitor import config
     from monitor.sources import youtube
@@ -612,11 +612,20 @@ def test_yt_rss_500_falls_back_to_api(monkeypatch):
     def fake_fetch(cid):
         calls["api"] += 1
         assert cid == "UCcUcK64JLSZAPUfG07s-Wew"
-        return [{"videoId": "abc", "title": "t", "publishedAt": "2026-09-01T00:00:00Z"}]
+        return [{"videoId": "abc", "title": "  Hello  ",
+                 "publishedAt": "2026-09-01T00:00:00Z",
+                 "description": "d", "thumbnail": "http://t/abc.jpg"}]
 
     monkeypatch.setattr(youtube_api, "fetch_uploads", fake_fetch)
-    assert youtube.check_channel("artist", "UCcUcK64JLSZAPUfG07s-Wew") == []
+    ups = youtube.check_channel("artist", "UCcUcK64JLSZAPUfG07s-Wew")
     assert calls["api"] == 1
+    assert len(ups) == 1
+    u = ups[0]
+    assert u.source_key == "youtube_UCcUcK64JLSZAPUfG07s-Wew"
+    assert u.external_id == "abc" and u.title == "Hello"
+    assert u.url == "https://www.youtube.com/watch?v=abc"
+    assert u.published_at is not None and u.published_at.utcoffset() is not None
+    assert u.media_urls == ["http://t/abc.jpg"]
 
 
 def test_yt_rss_timeout_without_key_keeps_old_behavior(monkeypatch):
@@ -640,7 +649,7 @@ def test_yt_rss_timeout_without_key_keeps_old_behavior(monkeypatch):
     assert calls["api"] == 0
 
 
-def test_yt_api_uses_uploads_playlist_not_search(monkeypatch, capsys):
+def test_yt_api_uses_uploads_playlist_not_search(monkeypatch):
     """Data API 走 uploads playlist 路线：channels.list → playlistItems.list（无 search）。"""
     import requests as req
     from monitor import config
@@ -667,7 +676,8 @@ def test_yt_api_uses_uploads_playlist_not_search(monkeypatch, capsys):
         assert params["maxResults"] == 5
         return Resp({"items": [
             {"snippet": {"resourceId": {"videoId": "v1"}, "title": "Hello",
-                         "publishedAt": "2026-09-10T01:02:03Z"}},
+                         "publishedAt": "2026-09-10T01:02:03Z", "description": "d1",
+                         "thumbnails": {"medium": {"url": "http://t/v1.jpg"}}}},
             {"snippet": {"resourceId": {"videoId": "v2"}, "title": "World",
                          "publishedAt": "2026-09-09T01:02:03Z"}}]})
 
@@ -675,9 +685,9 @@ def test_yt_api_uses_uploads_playlist_not_search(monkeypatch, capsys):
     monkeypatch.setattr(req, "get", fake_get)
     items = youtube_api.fetch_uploads("UCcUcK64JLSZAPUfG07s-Wew")
     assert [i["videoId"] for i in items] == ["v1", "v2"]
+    assert items[0]["description"] == "d1" and items[0]["thumbnail"] == "http://t/v1.jpg"
+    assert items[1]["description"] == "" and items[1]["thumbnail"] == ""
     assert all("search" not in u for u in seen_urls)
-    out = capsys.readouterr().out  # POC 打印 videoId/title/publishedAt
-    assert "v1" in out and "Hello" in out and "2026-09-10T01:02:03Z" in out
 
 
 def test_yt_rss_403_does_not_fallback(monkeypatch):

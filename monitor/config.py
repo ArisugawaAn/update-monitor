@@ -54,7 +54,7 @@ YOUTUBE_CHANNELS = [
     ("artist", "UCcUcK64JLSZAPUfG07s-Wew"),
     ("band", "UCT9b7yx6qEl0q994k4s6IEw"),
 ]
-# Data API v3 备用通道（POC）：仅 RSS 失败时 fallback 用；Key 只从环境变量读
+# Data API v3 备用通道：仅 RSS 失败时 fallback 用；Key 只从环境变量读
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
 
 # ---- TikTok（公开主页解析，无账号） ----------------------------------------
