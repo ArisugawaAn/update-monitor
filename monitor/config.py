@@ -11,6 +11,18 @@ BROWSER_UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
 # ---- Instagram Story（已 POC 验证） --------------------------------------
 IG_SESSION_USER = os.environ.get("IG_MONITOR_USER", "")  # 本地会话文件名后缀；生产用 IG_COOKIE
 IG_COOKIE = os.environ.get("IG_COOKIE", "")  # 生产：整串 Cookie 头；本地留空走 session 文件
+
+
+def ig_cookies() -> list[str]:
+    """多账号轮换支持：IG_COOKIE 可含多个 cookie，用换行或 "|||" 分隔。
+
+    Actions secret 支持多行文本；每 10 分钟窗口轮换起始号，单账号被轮询
+    频率降为 1/N（会话是消耗品，轮换 = 延长整体寿命）。返回顺序即优先级。
+    """
+    raw = (IG_COOKIE or "").replace("|||", "\n")
+    return [line.strip() for line in raw.splitlines() if line.strip()]
+
+
 IG_ACCOUNTS = [  # (用户名, 用户ID) —— ID 永久不变，POC 已实测
     ("miyamoto_doppo", 10584438821),
     ("elephantsinc_official", 66821998949),
@@ -189,14 +201,15 @@ def check_interval_ticks(key: str) -> int:
 ALERT_THRESHOLD = 6
 
 # ---- 失败冷却（只对列出的源生效；其他源行为与改动前完全一致） ------------------
-# ig_post 走 instagrapi 私有 API（对 3 个账号各发 1 次 user_medias，默认 10 分钟
-# 一轮）。触发 IG “Please wait a few minutes before you try again”限流后，若继续
-# 高频重试会加重账号标记甚至封禁；因此对**本源**采用与 ig_story 的 checkpoint
-# 同构的处理：
+# 两个 IG 源都走私有 API。触发 IG “Please wait a few minutes before you try
+# again”限流后，若继续高频重试会加重账号标记甚至封禁；因此对**本源**采用与
+# checkpoint 同构的处理：
 #   失败 → 本源冷却 N 轮（零请求、不计入成功/失败）+ 限流类事件报警一次（去重）
 #   恢复成功 → 解除冷却并重新武装报警
+# ig_story 加入理由（2026-09）：会话失效时每 10 分钟死锤被拒的 cookie，只会
+# 加速账号被标记；全部 cookie 失效后自动降温，换号恢复后立即回到正常节奏。
 # 未列入 COOLDOWN_SOURCES 的源，cooldown_ticks() 恒返回 0 → 门控逻辑完全跳过。
-COOLDOWN_SOURCES = {"ig_post"}      # 仅这些源失败后冷却（置空 set() 即全关）
+COOLDOWN_SOURCES = {"ig_post", "ig_story"}  # 仅这些源失败后冷却（置空 set() 即全关）
 # 冷却按“调度轮次”计数：每轮 Action ≈5 分钟，与源自身的检查间隔无关
 # （即 10 分钟源冷却 12 轮同样是 ≈60 分钟，因为冷却期内每个 tick 都跳过）。
 COOLDOWN_TICKS = 3                  # 普通失败：跳过 3 轮 ≈ 15 分钟

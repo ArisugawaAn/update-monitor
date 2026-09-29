@@ -436,17 +436,18 @@ _RATE_LIMIT_ERR = "PleaseWaitFewMinutes: Please wait a few minutes before you tr
 _CD_NOW = 1757802000.0  # 固定墙钟：让 sweep/整点判定可复现（同一小时内）
 
 
-def test_cooldown_config_only_covers_ig_post():
-    """冷却只对 ig_post 生效：其他源 cooldown_ticks() 恒为 0（行为与改动前一致）。"""
+def test_cooldown_config_covers_ig_sources():
+    """冷却只对两个 IG 源生效：其他源 cooldown_ticks() 恒为 0（行为与改动前一致）。"""
     from monitor import config
-    assert config.COOLDOWN_SOURCES == {"ig_post"}
-    # 冷却机制与源自身频率相互独立（30 分钟 / 每 6 轮）
+    assert config.COOLDOWN_SOURCES == {"ig_post", "ig_story"}
+    # 冷却机制与源自身频率相互独立（ig_post 30 分钟 / 每 6 轮）
     assert config.check_interval_ticks("ig_post") == 6
     assert config.check_interval_minutes("ig_post") == 30
     assert config.is_hour_aligned("ig_post") is False  # 与 youtube 一样不参与整点对齐
     assert config.cooldown_ticks("ig_post", "SourceError: boom") == config.COOLDOWN_TICKS
     assert config.cooldown_ticks("ig_post", _RATE_LIMIT_ERR) == config.RATE_LIMIT_COOLDOWN_TICKS
-    for key in ("x", "ig_story", "youtube_UCcUcK64JLSZAPUfG07s-Wew", "site_miyamoto"):
+    assert config.cooldown_ticks("ig_story", "SourceError: 会话失效：……") == config.COOLDOWN_TICKS
+    for key in ("x", "youtube_UCcUcK64JLSZAPUfG07s-Wew", "site_miyamoto"):
         assert config.cooldown_ticks(key, _RATE_LIMIT_ERR) == 0
     assert config.is_rate_limited("HTTP 429 too many requests")
     assert config.is_rate_limited("Feedback_Required: 账号行为标记")
@@ -861,7 +862,7 @@ def test_notify_prefix_ig_story_by_account(monkeypatch):
     assert config.notify_prefix("ig_story", "new_account") == "更新通知"  # 未登记 → 回退
 
 
-# ---------------- ig_story 会话有效性判据（防静默失明，2026-09 事故） ----------------
+# ---------------- ig_story 会话有效性判据 + 多 cookie 轮换（防静默失明） ----------------
 
 class _IgStoryResp:
     def __init__(self, payload):
@@ -873,50 +874,112 @@ class _IgStoryResp:
         return self._payload
 
 
-def _ig_story_check_with(monkeypatch, payload):
+_IG_LIVE_ITEM = {"pk": "123", "media_type": 1, "taken_at": 1759000000,
+                 "image_versions2": {"candidates": [{"url": "http://img/1.jpg"}]}}
+
+
+def _ig_payload(authed=True, items=True):
+    """构造 reels_media 响应体。authed=False 即匿名空响应（事故形态）。"""
+    d = {"reels": {}} if not (authed and items) else {
+        "reels": {"71496324324": {"items": [dict(_IG_LIVE_ITEM)]}}}
+    if authed:
+        d["reels_media"] = []
+    d["status"] = "ok"
+    return d
+
+
+def _ig_check_with(monkeypatch, cookies_payload):
+    """cookies_payload: {cookie串: 响应体}。经真实 check() 轮换路径。"""
+    from monitor import config
     from monitor.sources import ig_story
-    monkeypatch.setattr(ig_story, "_session", lambda: SimpleNamespace(
-        get=lambda *a, **k: _IgStoryResp(payload)))
+    monkeypatch.setattr(config, "IG_COOKIE", "|||".join(cookies_payload))
+    monkeypatch.setattr(ig_story, "_session_cookie", lambda c: SimpleNamespace(
+        get=lambda *a, **k: _IgStoryResp(cookies_payload[c])))
     return ig_story.check()
 
 
 def test_ig_story_anonymous_empty_response_is_failure(monkeypatch):
     """匿名空响应（无 reels_media 键）= 会话已失效 → 必须报错，不得静默返回 0 条。"""
-    import pytest
-    from monitor.models import SourceError
     with pytest.raises(SourceError, match="会话失效"):
-        _ig_story_check_with(monkeypatch, {"reels": {}, "status": "ok"})
+        _ig_check_with(monkeypatch, {"ck1": _ig_payload(authed=False)})
 
 
 def test_ig_story_authenticated_response_passes(monkeypatch):
     """登录响应（含 reels_media 键）正常解析：空 = 0 条，有 item = 转 Update。"""
-    payload = {"reels": {"71496324324": {"items": [
-        {"pk": "123", "media_type": 1, "taken_at": 1759000000,
-         "image_versions2": {"candidates": [{"url": "http://img/1.jpg"}]}},
-    ]}}, "reels_media": [], "status": "ok"}
-    ups = _ig_story_check_with(monkeypatch, payload)
+    ups = _ig_check_with(monkeypatch, {"ck1": _ig_payload()})
     assert [u.external_id for u in ups] == ["123"]
     assert ups[0].account_name == "h.m.staff"
     assert ups[0].media_urls == ["http://img/1.jpg"]
 
-    ups_empty = _ig_story_check_with(monkeypatch, {"reels": {}, "reels_media": [], "status": "ok"})
+    ups_empty = _ig_check_with(monkeypatch, {"ck1": _ig_payload(items=False)})
     assert ups_empty == []
 
 
 def test_ig_story_legacy_nested_data_shape_passes(monkeypatch):
     """旧形态（reels 嵌套在 data 下、reels_media 也在 data 下）同样被认作已登录。"""
-    payload = {"data": {"reels": {}, "reels_media": []}, "status": "ok"}
-    ups = _ig_story_check_with(monkeypatch, payload)
+    ups = _ig_check_with(monkeypatch, {"ck1": {"data": {"reels": {}, "reels_media": []},
+                                               "status": "ok"}})
     assert ups == []
+
+
+def test_ig_story_multi_cookie_failover(monkeypatch):
+    """第一个 cookie 被拒（匿名空响应）→ 本轮立即切换下一个，节奏不断。"""
+    from monitor.sources import ig_story
+    ups = _ig_check_with(monkeypatch, {"dead": _ig_payload(authed=False),
+                                       "live": _ig_payload()})
+    assert [u.external_id for u in ups] == ["123"]
+    assert ig_story._LAST_AUTH is True
+    assert ig_story._LAST_COOKIE.endswith("/2")
+
+
+def test_ig_story_all_cookies_dead_raises(monkeypatch):
+    """全部 cookie 失效 → 明确报错（触发报警），health 标注 0/N。"""
+    from monitor.sources import ig_story
+    with pytest.raises(SourceError, match="会话失效"):
+        _ig_check_with(monkeypatch, {"d1": _ig_payload(authed=False),
+                                     "d2": _ig_payload(authed=False)})
+    assert ig_story._LAST_AUTH is False
+    assert ig_story._LAST_COOKIE == "0/2"
+
+
+def test_ig_story_non_session_error_does_not_failover(monkeypatch):
+    """网络/HTTP 类错误与 cookie 无关 → 直接上抛，不切换下一个。"""
+    class Resp500:
+        status_code = 500
+        text = "boom"
+
+        def json(self):
+            return {}
+
+    from monitor import config
+    from monitor.sources import ig_story
+    monkeypatch.setattr(config, "IG_COOKIE", "a|||b")
+    monkeypatch.setattr(ig_story, "_session_cookie",
+                        lambda c: SimpleNamespace(get=lambda *a, **k: Resp500()))
+    with pytest.raises(SourceError, match="HTTP 500"):
+        ig_story.check()
+
+
+def test_config_ig_cookies_parsing(monkeypatch):
+    """多 cookie 解析：换行 / ||| / 单个 / 空。"""
+    from monitor import config
+    monkeypatch.setattr(config, "IG_COOKIE", "aaa=1\nbbb=2\n\nccc=3")
+    assert config.ig_cookies() == ["aaa=1", "bbb=2", "ccc=3"]
+    monkeypatch.setattr(config, "IG_COOKIE", "aaa=1|||bbb=2")
+    assert config.ig_cookies() == ["aaa=1", "bbb=2"]
+    monkeypatch.setattr(config, "IG_COOKIE", "  aaa=1  ")
+    assert config.ig_cookies() == ["aaa=1"]
+    monkeypatch.setattr(config, "IG_COOKIE", "")
+    assert config.ig_cookies() == []
 
 
 def test_ig_story_health_note_reflects_session(monkeypatch):
     """health_note 展示最近一次 check 的会话判定：已登录✓ / 未登录⚠。"""
     from monitor.sources import ig_story
-    _ig_story_check_with(monkeypatch, {"reels": {}, "reels_media": [], "status": "ok"})
+    _ig_check_with(monkeypatch, {"ck1": _ig_payload(items=False)})
     assert "已登录✓" in ig_story.health_note()
     with pytest.raises(SourceError, match="会话失效"):
-        _ig_story_check_with(monkeypatch, {"reels": {}, "status": "ok"})
+        _ig_check_with(monkeypatch, {"ck1": _ig_payload(authed=False)})
     assert "未登录" in ig_story.health_note()
 
 
@@ -928,12 +991,12 @@ def test_health_check_line_shows_session_status(monkeypatch):
     monkeypatch.setattr(m.email, "send_test", lambda lines: sent.update(lines=lines) or True)
     src = ig_story.source()
 
-    _ig_story_check_with(monkeypatch, {"reels": {}, "reels_media": [], "status": "ok"})
+    _ig_check_with(monkeypatch, {"ck1": _ig_payload(items=False)})
     m.health_check([src])
     assert any("ig_story" in l and "会话有效" in l for l in sent["lines"])
 
-    monkeypatch.setattr(ig_story, "_session", lambda: SimpleNamespace(
-        get=lambda *a, **k: _IgStoryResp({"reels": {}, "status": "ok"})))
+    monkeypatch.setattr(ig_story, "_session_cookie", lambda c: SimpleNamespace(
+        get=lambda *a, **k: _IgStoryResp(_ig_payload(authed=False))))
     m.health_check([src])
     assert any("ig_story" in l and "会话失效" in l for l in sent["lines"])
 
