@@ -1,5 +1,6 @@
 """集中配置：账号注册表、镜像列表、阈值。密钥全部来自环境变量。"""
 import os
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -193,6 +194,30 @@ def check_interval_ticks(key: str) -> int:
     if key.startswith("tiktok_"):
         return TIKTOK_CHECK_INTERVAL_TICKS
     return DEFAULT_CHECK_INTERVAL_TICKS
+
+
+# ---- 静默时段（日本时间） --------------------------------------------------
+# 命中的源在 JST start:00–end:00 不发任何请求（跳过不计数、不推进轮次，
+# 时段结束后第一个 tick 自动恢复）。夜间停查以降低会话的风控压力。
+# 只支持 start < end 的当天内时段（跨夜时段需自行拆成两段）。
+JST = timezone(timedelta(hours=9))  # 监测对象主要在日本活动
+
+QUIET_HOURS_JST = {
+    "ig_story": (2, 7),  # 日本时间凌晨 2:00–7:00 休息不查询
+}
+
+
+def quiet_hours_jst(key: str) -> tuple[int, int] | None:
+    """返回某源的静默时段 (start, end)，未配置返回 None。"""
+    return QUIET_HOURS_JST.get(key)
+
+
+def in_quiet_hours_jst(key: str, now_ts: float) -> bool:
+    """source 当前（按 now_ts 换算日本时间）是否处于其静默时段。"""
+    q = QUIET_HOURS_JST.get(key)
+    if not q:
+        return False
+    return q[0] <= datetime.fromtimestamp(now_ts, JST).hour < q[1]
 
 
 # ---- 故障报警 --------------------------------------------------------------

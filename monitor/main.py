@@ -61,6 +61,12 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
         if cd_left:  # 失败冷却中：本源零请求（整点 sweep 也不破例），其他源照常
             summary.append((src.key, f"冷却中（跳过 {cd_left} 轮，避免限流封禁）"))
             continue
+        if config.in_quiet_hours_jst(src.key, now_ts):
+            # 静默时段（日本时间）：零请求、不推进轮次，时段结束自动恢复
+            # （优先级高于整点 sweep：夜间 sweep 也不破例）
+            q = config.quiet_hours_jst(src.key)
+            summary.append((src.key, f"跳过（日本时间 {q[0]:02d}:00–{q[1]:02d}:00 静默时段）"))
+            continue
         interval_ticks = config.check_interval_ticks(src.key)
         interval_min = config.check_interval_minutes(src.key)
         if config.is_hour_aligned(src.key):

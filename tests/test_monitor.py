@@ -373,8 +373,9 @@ def test_hour_aligned_source_runs_once_per_hour(monkeypatch):
 
 def test_checkpoint_alert_fires_once_per_incident(monkeypatch):
     """checkpoint 报警按事件去重：连续异常只发一次，恢复成功后重新武装。"""
-    from monitor import main as m
+    from monitor import config, main as m
     _no_save(monkeypatch)
+    monkeypatch.setattr(config, "QUIET_HOURS_JST", {})  # ig_story 未配静默时段，避免墙钟干扰
     sent = []
     monkeypatch.setattr(m.email, "send_alert", lambda s, b: sent.append(s) or True)
     state = _tick_state({})
@@ -971,6 +972,49 @@ def test_config_ig_cookies_parsing(monkeypatch):
     assert config.ig_cookies() == ["aaa=1"]
     monkeypatch.setattr(config, "IG_COOKIE", "")
     assert config.ig_cookies() == []
+
+
+# ---------------- 静默时段（日本时间） ----------------
+
+def test_quiet_hours_skips_ig_story_at_jst_night(monkeypatch):
+    """JST 02:00–07:00：ig_story 跳过（零请求、不推进轮次、不计成败）。"""
+    import datetime as dt
+    from monitor import config, main as m
+    _no_save(monkeypatch)
+    monkeypatch.setattr(config, "HOUR_ALIGNED_SOURCES", set())
+    ts = dt.datetime(2026, 9, 27, 18, 30, tzinfo=dt.timezone.utc).timestamp()  # JST 03:30
+    assert config.in_quiet_hours_jst("ig_story", ts)
+    state = _tick_state({"ig_story": 100})
+    src, calls = _fake_src("ig_story")
+    summary, ok, fail = m.run_once([src], state, {}, set(), tick=101, now=ts)
+    assert calls["n"] == 0 and ok == 0 and fail == 0
+    assert "静默" in summary[0][1]
+    assert state["sources"]["ig_story"]["last_checked_tick"] == 100  # 轮次未推进
+
+
+def test_quiet_hours_outside_runs_normally(monkeypatch):
+    """JST 白天：静默时段外照常按轮次节奏检查。"""
+    import datetime as dt
+    from monitor import main as m
+    _no_save(monkeypatch)
+    ts = dt.datetime(2026, 9, 27, 23, 30, tzinfo=dt.timezone.utc).timestamp()  # JST 08:30
+    state = _tick_state({"ig_story": 99})
+    src, calls = _fake_src("ig_story")
+    summary, ok, _ = m.run_once([src], state, {}, set(), tick=101, now=ts)
+    assert calls["n"] == 1 and ok == 1
+    assert "静默" not in summary[0][1]
+
+
+def test_quiet_hours_other_sources_unaffected(monkeypatch):
+    """静默时段只影响配置了的源：x 等其他源在同一时刻照查。"""
+    import datetime as dt
+    from monitor import main as m
+    _no_save(monkeypatch)
+    ts = dt.datetime(2026, 9, 27, 18, 30, tzinfo=dt.timezone.utc).timestamp()  # JST 03:30
+    state = _tick_state({"x": 100})
+    sx, cx = _fake_src("x")
+    m.run_once([sx], state, {}, set(), tick=101, now=ts)
+    assert cx["n"] == 1
 
 
 def test_ig_story_health_note_reflects_session(monkeypatch):

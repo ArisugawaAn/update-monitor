@@ -73,3 +73,12 @@ an error, while an authenticated response always carries a `reels_media` key.
 The story source fails loudly (alert email within ~1 hour) when that marker is
 missing, instead of silently reporting zero stories — the 2026-09-24/27 outage
 (a dead cookie looking "healthy" for 3 days) is exactly what this prevents.
+
+Quiet hours + cookie rotation (story source): `ig_story` sends no requests
+between 02:00–07:00 JST (`QUIET_HOURS_JST` in `monitor/config.py`; skips don't
+count as checks and polling resumes on the first tick after 07:00), and the
+`IG_COOKIE` secret may hold **multiple** cookies (one per line, or separated by
+`|||`) — every 10-minute window rotates the starting cookie so each account is
+polled 1/N as often, and a rejected cookie fails over to the next one within
+the same round. All cookies dead ⇒ loud alert + failure cooldown instead of
+hammering Instagram.
