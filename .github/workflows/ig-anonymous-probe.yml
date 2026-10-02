@@ -1,0 +1,30 @@
+name: ig-anonymous-probe
+
+# 一次性实验：验证 Actions 真实出口（Azure 数据中心 IP）能否免账号访问 IG。
+# 仅手动触发，与 monitor 主流程完全无关（不跑监控、不碰状态、不发通知）。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ig-anonymous-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install probe deps
+        run: pip install "instagrapi[curl]" instaloader
+
+      - name: Anonymous probe (instagrapi public transport + Instaloader)
+        run: python poc/ig_anonymous_probe.py miyamoto_doppo 3
