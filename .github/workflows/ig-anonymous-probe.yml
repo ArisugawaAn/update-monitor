@@ -15,7 +15,7 @@ concurrency:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -27,4 +27,4 @@ jobs:
         run: pip install "instagrapi[curl]" instaloader
 
       - name: Anonymous probe (instagrapi public transport + Instaloader)
-        run: python poc/ig_anonymous_probe.py miyamoto_doppo 3
+        run: python poc/ig_anonymous_probe.py miyamoto_doppo 10584438821 2
