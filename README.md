@@ -10,8 +10,8 @@ sends one email per new item. Runs entirely on GitHub Actions (free tier).
 - Instagram posts/reels (private API via `instagrapi`, separate source from
   stories — needs its own session, see the secrets table below; checked every
   30 minutes, to stay well clear of Instagram's rate limits)
-- X / Twitter (public RSS mirrors; main account every round, secondary
-  accounts every 15 min)
+- X / Twitter (public RSS mirrors; `@miyamoto_hiroji` and `@elekashi_ofcl`
+  every round, other secondary accounts every 15 min)
 - YouTube (official channel feeds; if a feed fails with 404/500/timeout the
   source falls back to YouTube Data API v3 uploads-playlist and notifies the
   same way — needs the `YOUTUBE_API_KEY` secret, skipped silently if unset)

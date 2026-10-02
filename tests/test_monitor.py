@@ -316,7 +316,7 @@ def test_skip_round_does_not_touch_fail_streak(monkeypatch):
     assert st.get_fail_streak(state, "site_miyamoto") == 3
 
 
-def test_secondary_x_accounts_registered_every_3_rounds():
+def test_x_accounts_poll_intervals():
     from monitor import config, main as m
     from monitor.sources import x_twitter
     assert config.X_USERS == ["miyamoto_hiroji", "paonews_info",
@@ -324,9 +324,12 @@ def test_secondary_x_accounts_registered_every_3_rounds():
     keys = [s.key for s in m.build_sources() if s.key == "x" or s.key.startswith("x_")]
     assert keys == ["x", "x_paonews_info", "x_hmnews_info", "x_elekashi_ofcl"]
     assert config.check_interval_ticks("x") == 1  # 主号每轮，不受影响
-    for k in ("x_paonews_info", "x_hmnews_info", "x_elekashi_ofcl"):
+    for k in ("x_paonews_info", "x_hmnews_info"):
         assert config.check_interval_ticks(k) == 3
         assert config.check_interval_minutes(k) == 15
+    # エレカシ官方号 2026-10 起提到每轮（5 分钟）
+    assert config.check_interval_ticks("x_elekashi_ofcl") == 1
+    assert config.check_interval_minutes("x_elekashi_ofcl") == 5
     # 次要号 source_key 独立（去重作用域隔离）；主号旧 key 不变
     assert x_twitter.source().key == "x"
     assert x_twitter.source("paonews_info").key == "x_paonews_info"

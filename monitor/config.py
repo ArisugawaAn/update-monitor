@@ -145,7 +145,7 @@ CHECK_INTERVAL_MINUTES = {  # 保留：人类可读的期望 cadence（实际门
     "x": 5,
     "x_paonews_info": 15,
     "x_hmnews_info": 15,
-    "x_elekashi_ofcl": 15,
+    "x_elekashi_ofcl": 5,  # エレカシ官方号：2026-10 起提到 5 分钟一次
     "site_miyamoto": 15,
     "site_ek": 15,
     "site_ekfc": 15,
@@ -161,7 +161,7 @@ CHECK_INTERVAL_TICKS = {  # 实际门控：每 N 轮查一次
     "x": 1,  # 主号 @miyamoto_hiroji：每轮查，不受次要号影响
     "x_paonews_info": 3,  # 次要 X 号：每 3 轮（≈15 分钟）查
     "x_hmnews_info": 3,
-    "x_elekashi_ofcl": 3,
+    "x_elekashi_ofcl": 1,  # エレカシ官方号：每轮查（2026-10 起 5 分钟一次）
     "site_miyamoto": 3,
     "site_ek": 3,
     "site_ekfc": 3,
