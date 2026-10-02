@@ -407,6 +407,174 @@ def test_checkpoint_alert_fires_once_per_incident(monkeypatch):
     assert len(sent) == 2
 
 
+# ---------------- ig_story 多账号轮换：错误带 cookie 标识，报警可定位账号 ----------------
+
+def _cookie(uid: str) -> str:
+    return f"ds_user_id={uid}; sessionid=abc{uid}; csrftoken=tok"
+
+
+def test_ds_user_id_extracted_from_cookie():
+    from monitor.sources import ig_story
+    assert ig_story._ds_user_id(_cookie("111")) == "111"
+    assert ig_story._ds_user_id("sessionid=x; csrftoken=t") == ""  # 无 uid 字段
+
+
+def test_cookie_tag_prefers_label_falls_back_to_index(monkeypatch):
+    from monitor import config
+    from monitor.sources import ig_story
+    cookies = [_cookie("111"), _cookie("222")]
+    monkeypatch.setattr(config, "IG_COOKIE_LABELS", ["甲号", "乙号"])
+    assert ig_story._cookie_tag(cookies, 0) == "甲号·uid111"
+    monkeypatch.setattr(config, "IG_COOKIE_LABELS", [])  # 未命名：退回 序号/总数
+    assert ig_story._cookie_tag(cookies, 1) == "2/2·uid222"
+
+
+def test_session_failover_succeeds_and_records_serving_cookie(monkeypatch):
+    """前两号会话失效换下一个，最后一个成功：不报错，状态里记录服务号与失效号。"""
+    from monitor import config
+    from monitor.sources import ig_story
+    cookies = [_cookie("111"), _cookie("222"), _cookie("333")]
+    monkeypatch.setattr(config, "IG_COOKIE_LABELS", ["甲号", "乙号", "丙号"])
+    monkeypatch.setattr(config, "ig_cookies", lambda: cookies)
+    monkeypatch.setattr(ig_story, "time",
+                        SimpleNamespace(time=lambda: 1757800800.0))  # 钉住起点=甲号
+
+    def fake_fetch(s):
+        uid = s.cookies.get("ds_user_id")
+        if uid in ("111", "222"):
+            raise SourceError("会话失效：IG 返回未登录的匿名空响应")
+        return {"data": {"reels_media": {}}}
+
+    monkeypatch.setattr(ig_story, "_fetch", fake_fetch)
+    assert ig_story.check() == []
+    assert ig_story._LAST_COOKIE == "丙号·uid333"
+    assert ig_story._LAST_AUTH is True
+    serving, dead = ig_story.cookie_status()
+    assert serving == "丙号·uid333"
+    assert [(t, r) for t, r in dead] == [
+        ("甲号·uid111", "会话失效：IG 返回未登录的匿名空响应"),
+        ("乙号·uid222", "会话失效：IG 返回未登录的匿名空响应"),
+    ]
+
+
+def test_all_cookies_dead_error_lists_every_account(monkeypatch):
+    """全部 cookie 失效：最终错误逐号给出标识与原因，报警邮件不用再排查是谁。"""
+    from monitor import config
+    from monitor.sources import ig_story
+    cookies = [_cookie("111"), _cookie("222")]
+    monkeypatch.setattr(config, "IG_COOKIE_LABELS", ["甲号", "乙号"])
+    monkeypatch.setattr(config, "ig_cookies", lambda: cookies)
+    monkeypatch.setattr(ig_story, "_fetch",
+                        lambda s: (_ for _ in ()).throw(
+                            SourceError("会话失效(401)，需重新导入 Cookie")))
+    with pytest.raises(SourceError) as ei:
+        ig_story.check()
+    msg = str(ei.value)
+    assert "全部 2 个" in msg
+    assert "[甲号·uid111] 会话失效(401)" in msg
+    assert "[乙号·uid222] 会话失效(401)" in msg
+    assert ig_story._LAST_AUTH is False
+    assert {t for t, _ in ig_story.cookie_status()[1]} == {"甲号·uid111", "乙号·uid222"}
+
+
+def test_checkpoint_error_keeps_type_and_gains_tag(monkeypatch):
+    """checkpoint 是账号级错误：类型必须保留（main 按类型停源），并带上是哪个号。"""
+    from monitor.models import CheckpointError
+    from monitor import config
+    from monitor.sources import ig_story
+    cookies = [_cookie("111"), _cookie("222")]
+    monkeypatch.setattr(config, "IG_COOKIE_LABELS", ["甲号", "乙号"])
+    monkeypatch.setattr(config, "ig_cookies", lambda: cookies)
+    monkeypatch.setattr(ig_story, "time", SimpleNamespace(time=lambda: _CD_NOW))  # 钉住轮换起点
+    calls = []
+
+    def fake_fetch(s):
+        calls.append(1)
+        raise CheckpointError("IG 账号被要求 checkpoint 验证，已停止本源")
+
+    monkeypatch.setattr(ig_story, "_fetch", fake_fetch)
+    with pytest.raises(CheckpointError) as ei:
+        ig_story.check()
+    assert "[甲号·uid111]" in str(ei.value)
+    assert len(calls) == 1  # 账号级错误：立即停，不烧剩余 cookie
+
+
+def test_account_unrelated_errors_raise_with_tag_without_burning_rest(monkeypatch):
+    """限流/HTTP 等与账号无关的错误：语义不变（立即上抛），但带上 cookie 标识。"""
+    from monitor import config
+    from monitor.sources import ig_story
+    cookies = [_cookie("111"), _cookie("222")]
+    monkeypatch.setattr(config, "IG_COOKIE_LABELS", ["甲号", "乙号"])
+    monkeypatch.setattr(config, "ig_cookies", lambda: cookies)
+    monkeypatch.setattr(ig_story, "time", SimpleNamespace(time=lambda: _CD_NOW))  # 钉住轮换起点
+    calls = []
+
+    def fake_fetch(s):
+        calls.append(1)
+        raise SourceError("账号行为标记仍在(feedback_required)")
+
+    monkeypatch.setattr(ig_story, "_fetch", fake_fetch)
+    with pytest.raises(SourceError) as ei:
+        ig_story.check()
+    assert "[甲号·uid111]" in str(ei.value) and "feedback_required" in str(ei.value)
+    assert len(calls) == 1
+
+
+def test_unexpected_error_wrapped_with_tag(monkeypatch):
+    """网络/解析等意外异常：包成 SourceError 并保留原类型名 + cookie 标识。"""
+    from monitor import config
+    from monitor.sources import ig_story
+    cookies = [_cookie("111")]
+    monkeypatch.setattr(config, "IG_COOKIE_LABELS", [])
+    monkeypatch.setattr(config, "ig_cookies", lambda: cookies)
+    monkeypatch.setattr(ig_story, "_fetch",
+                        lambda s: (_ for _ in ()).throw(ConnectionError("reset by peer")))
+    with pytest.raises(SourceError) as ei:
+        ig_story.check()
+    msg = str(ei.value)
+    assert "[1/1·uid111]" in msg and "ConnectionError" in msg
+
+
+def test_dead_cookie_alert_fires_once_and_rearms_on_recovery(monkeypatch):
+    """单号失效（轮换顶上、本轮仍成功）也立即报警：按事件去重一次，恢复后重新武装。"""
+    from monitor import config, main as m
+    _no_save(monkeypatch)
+    monkeypatch.setattr(config, "QUIET_HOURS_JST", {})
+    sent = []
+    monkeypatch.setattr(m.email, "send_alert", lambda s, b: sent.append(s) or True)
+    state = _tick_state({})
+
+    serving = "viewer-a·uid111"
+    dead = [("viewer-b·uid222", "会话失效(401)，需重新导入 Cookie")]
+
+    class Src:
+        key = "ig_story"
+        platform = "instagram"
+
+        @staticmethod
+        def check():
+            return []
+
+        @staticmethod
+        def cookie_status():
+            return serving, list(dead)
+
+    summary, _, _ = m.run_once([Src()], state, {}, set(), tick=1)
+    assert len(sent) == 1 and "viewer-b·uid222" in sent[0]
+    assert "失效已接管" in summary[0][1]  # 控制台/Actions 日志同样可见
+    m.run_once([Src()], state, {}, set(), tick=3)  # 2 轮源：隔轮才检查；同一事件只报一次
+    assert len(sent) == 1
+
+    dead.clear()                  # 用户修复 cookie，该号恢复服务
+    serving = "viewer-b·uid222"
+    m.run_once([Src()], state, {}, set(), tick=5)  # 恢复 → 清 flag，不发邮件
+    assert len(sent) == 1
+
+    dead.append(("viewer-b·uid222", "再次会话失效"))
+    m.run_once([Src()], state, {}, set(), tick=7)  # 重新武装后再次失效 → 再报
+    assert len(sent) == 2 and "viewer-b·uid222" in sent[1]
+
+
 ELEPHANTSINC_HOME_HTML = """
 <html><body>
  <a href="./news202609/">最新公告</a>
@@ -441,9 +609,9 @@ def test_cooldown_config_covers_ig_sources():
     """冷却只对两个 IG 源生效：其他源 cooldown_ticks() 恒为 0（行为与改动前一致）。"""
     from monitor import config
     assert config.COOLDOWN_SOURCES == {"ig_post", "ig_story"}
-    # 冷却机制与源自身频率相互独立（ig_post 30 分钟 / 每 6 轮）
-    assert config.check_interval_ticks("ig_post") == 6
-    assert config.check_interval_minutes("ig_post") == 30
+    # 冷却机制与源自身频率相互独立（ig_post 60 分钟 / 每 12 轮）
+    assert config.check_interval_ticks("ig_post") == 12
+    assert config.check_interval_minutes("ig_post") == 60
     assert config.is_hour_aligned("ig_post") is False  # 与 youtube 一样不参与整点对齐
     assert config.cooldown_ticks("ig_post", "SourceError: boom") == config.COOLDOWN_TICKS
     assert config.cooldown_ticks("ig_post", _RATE_LIMIT_ERR) == config.RATE_LIMIT_COOLDOWN_TICKS
@@ -522,8 +690,8 @@ def test_ordinary_ig_post_failure_uses_shorter_cooldown(monkeypatch):
     assert "冷却" in note and "限流" not in note
     assert alerts == []  # 未达 ALERT_THRESHOLD 且非限流事件 → 不报警
 
-    # ig_post 为 6 轮源：冷却(3 轮)结束后还需等到轮次到期（tick ≥ 107）
-    m.run_once([ig], state, {}, set(), tick=107, now=_CD_NOW)
+    # ig_post 为 12 轮源：冷却(3 轮)结束后还需等到轮次到期（tick ≥ 113）
+    m.run_once([ig], state, {}, set(), tick=113, now=_CD_NOW)
     assert ig_calls["n"] == 2  # 冷却结束且轮次到期 → 恢复检查
 
 
@@ -811,8 +979,64 @@ def test_ig_graph_error_raises(monkeypatch):
         ig_graph.fetch_user_media("miyamoto_doppo")
 
 
-def test_ig_post_cadence_every_6_rounds(monkeypatch):
-    """ig_post 为 30 分钟源：每 6 轮才查一次（sweep 仍会强制）。"""
+def test_ig_embed_parses_shortcodes(monkeypatch):
+    """embed HTML 提取 /p/、/reel/、/tv/ 短码：去重、保序、kind 归一化。"""
+    import requests as req
+    from monitor.sources import ig_embed
+    seen: dict = {}
+
+    class Resp:
+        status_code = 200
+        url = "https://www.instagram.com/miyamoto_doppo/embed/"
+        text = ('<html><a href="/p/ABCdef123/">a</a>'
+                '<a href="/reel/ReEl456xyz/">r</a>'
+                '<a href="/p/ABCdef123/">dup</a>'
+                '<a href="/tv/OldTV789aa/">t</a></html>')
+
+    def fake_get(url, **k):
+        seen["url"], seen["headers"] = url, k.get("headers")
+        return Resp()
+
+    monkeypatch.setattr(req, "get", fake_get)
+    items = ig_embed.fetch_profile_embed("miyamoto_doppo")
+    assert seen["url"].endswith("/miyamoto_doppo/embed/")
+    assert seen["headers"]["User-Agent"].startswith("Mozilla/5.0")
+    assert [i["shortcode"] for i in items] == ["ABCdef123", "ReEl456xyz", "OldTV789aa"]
+    assert [i["kind"] for i in items] == ["post", "reel", "tv"]
+
+
+def test_ig_embed_login_redirect_raises(monkeypatch):
+    """embed 被重定向到登录页 → RuntimeError（通道对当前出口不可用）。"""
+    import requests as req
+    from monitor.sources import ig_embed
+
+    class Resp:
+        status_code = 200
+        url = "https://www.instagram.com/accounts/login/"
+        text = "<html>Login • Instagram</html>"
+
+    monkeypatch.setattr(req, "get", lambda *a, **k: Resp())
+    with pytest.raises(RuntimeError, match="登录页"):
+        ig_embed.fetch_profile_embed("miyamoto_doppo")
+
+
+def test_ig_embed_http_error_raises(monkeypatch):
+    """embed 非 200 → RuntimeError 带状态码（将来接线时转 SourceError）。"""
+    import requests as req
+    from monitor.sources import ig_embed
+
+    class Resp:
+        status_code = 404
+        url = "https://www.instagram.com/nobody_here/embed/"
+        text = "Not Found"
+
+    monkeypatch.setattr(req, "get", lambda *a, **k: Resp())
+    with pytest.raises(RuntimeError, match="HTTP 404"):
+        ig_embed.fetch_profile_embed("nobody_here")
+
+
+def test_ig_post_cadence_every_12_rounds(monkeypatch):
+    """ig_post 为 60 分钟源：每 12 轮才查一次（sweep 仍会强制）。"""
     from monitor import config, main as m
     _no_save(monkeypatch)
     monkeypatch.setattr(config, "HOUR_ALIGNED_SOURCES", set())  # 只验证 tick 节奏
@@ -820,11 +1044,11 @@ def test_ig_post_cadence_every_6_rounds(monkeypatch):
     st.set_last_checked_tick(state, "ig_post", 100)
     ig, calls = _fake_src("ig_post")
 
-    s1, ok1, _ = m.run_once([ig], state, {}, set(), tick=101)  # 间隔 1 < 6 → 跳过
+    s1, ok1, _ = m.run_once([ig], state, {}, set(), tick=106)  # 间隔 6 < 12 → 跳过
     assert calls["n"] == 0 and ok1 == 0 and "跳过" in s1[0][1]
-    s2, ok2, _ = m.run_once([ig], state, {}, set(), tick=106)  # 间隔 6 → 检查
+    s2, ok2, _ = m.run_once([ig], state, {}, set(), tick=112)  # 间隔 12 → 检查
     assert calls["n"] == 1 and ok2 == 1
-    assert config.check_interval_ticks("ig_post") == 6
+    assert config.check_interval_ticks("ig_post") == 12
 
 
 # ---------------- 邮件主题前缀（按来源区分 人物/团体） ----------------
@@ -1071,3 +1295,150 @@ def test_email_subject_uses_per_source_prefix():
                    account_name="elephantsinc_official", content_type="story",
                    external_id="pk1")
     assert email._render(story)[0].startswith("【elephants｜Instagram Story】")
+
+
+# ---------------- ekdb 分发推送（unpushed 队列 + 幂等重推 + 源目录同步） ----------------
+
+def test_unpushed_queue_roundtrip(tmp_path):
+    state = _state(tmp_path)
+    assert st.get_unpushed(state, "t") == []
+    st.set_unpushed(state, "t", [_u("1"), _u("2")])
+    assert [u.external_id for u in st.get_unpushed(state, "t")] == ["1", "2"]
+    st.clear_unpushed(state, "t")
+    assert st.get_unpushed(state, "t") == []
+
+
+def test_unpushed_preserves_datetime_fields(tmp_path):
+    from datetime import datetime, timezone
+    state = _state(tmp_path)
+    u = _u("1")
+    u.published_at = datetime(2026, 9, 28, 5, 0, tzinfo=timezone.utc)
+    st.set_unpushed(state, "t", [u])
+    got = st.get_unpushed(state, "t")[0]
+    assert got.published_at == u.published_at
+
+
+def test_unpushed_cap(tmp_path):
+    state = _state(tmp_path)
+    st.set_unpushed(state, "t", [_u(str(i)) for i in range(100)])
+    assert len(st.get_unpushed(state, "t")) == st.UNPUSHED_CAP
+
+
+def test_run_once_pushes_new_and_retries_on_failure(monkeypatch):
+    """新动态即推；失败进 unpushed 队列，下轮连同新动态一起重推（至少一次）。"""
+    from monitor import config, main as m
+    _no_save(monkeypatch)
+    monkeypatch.setattr(config, "EKDB_DISPATCH_URL", "https://ekdb.example")
+    monkeypatch.setattr(config, "EKDB_MONITOR_TOKEN", "tok")
+    pushes: list = []
+    flag = {"ok": True}
+
+    def fake_push(updates, catalog=None, sources_only=False):
+        pushes.append([u.external_id for u in updates])
+        return flag["ok"], "ok"
+
+    monkeypatch.setattr(m.ekdb_push, "push", fake_push)
+    state = _tick_state({"x": 100})
+    state["sources"]["x"]["baselined"] = True  # 跳过 baseline 轮，直接进入通知
+
+    src, _ = _fake_src("x", updates=[_u("a1")])
+    m.run_once([src], state, {}, set(), tick=101)
+    assert pushes == [["a1"]]
+    assert st.get_unpushed(state, "x") == []
+
+    flag["ok"] = False
+    src, _ = _fake_src("x", updates=[_u("a2")])
+    m.run_once([src], state, {}, set(), tick=102)
+    assert pushes[-1] == ["a2"]
+    assert [u.external_id for u in st.get_unpushed(state, "x")] == ["a2"]
+
+    src, _ = _fake_src("x", updates=[_u("a3")])
+    m.run_once([src], state, {}, set(), tick=103)
+    assert pushes[-1] == ["a3", "a2"]  # 遗留 + 新动态一起重推
+
+
+def test_run_once_skips_push_when_not_configured(monkeypatch):
+    """未配置 EKDB_DISPATCH_URL：不产生任何推送请求（行为与改动前一致）。"""
+    from monitor import config, main as m
+    _no_save(monkeypatch)
+    monkeypatch.setattr(config, "EKDB_DISPATCH_URL", "")
+    monkeypatch.setattr(config, "EKDB_MONITOR_TOKEN", "")
+    called = {"n": 0}
+
+    def boom(*a, **k):
+        called["n"] += 1
+        return True, ""
+
+    monkeypatch.setattr(m.ekdb_push, "push", boom)
+    state = _tick_state({"x": 100})
+    state["sources"]["x"]["baselined"] = True
+    src, _ = _fake_src("x", updates=[_u("a1")])
+    m.run_once([src], state, {}, set(), tick=101)
+    assert called["n"] == 0
+
+
+def test_catalog_synced_only_on_hash_change(monkeypatch):
+    """目录哈希未变 → 不单独推目录；变化后下一轮只推一次目录。"""
+    from monitor import config, main as m
+    _no_save(monkeypatch)
+    monkeypatch.setattr(config, "EKDB_DISPATCH_URL", "https://ekdb.example")
+    monkeypatch.setattr(config, "EKDB_MONITOR_TOKEN", "tok")
+    calls: list = []
+
+    def fake_push(updates, catalog=None, sources_only=False):
+        calls.append(("sources_only" if sources_only else "updates",
+                      [u.external_id for u in updates]))
+        return True, "ok"
+
+    monkeypatch.setattr(m.ekdb_push, "push", fake_push)
+    state = _tick_state({"x": 100})
+    state["sources"]["x"]["baselined"] = True
+
+    src, _ = _fake_src("x", updates=[])  # 无新动态 → 只做目录比对，首次哈希为空 → 推一次
+    m.run_once([src], state, {}, set(), tick=101)
+    assert calls == [("sources_only", [])]
+    m.run_once([src], state, {}, set(), tick=102)  # 哈希已记录 → 不再推
+    assert calls == [("sources_only", [])]
+
+
+def test_sources_catalog_covers_all_sources():
+    """目录覆盖全部源：key 与 account_name 必须与各源 check() 产出的 Update 一致。"""
+    from monitor import config
+    from monitor.notification import ekdb_push
+    cat = {c["source_key"] + "|" + c["account_name"]
+           for c in ekdb_push.sources_catalog()}
+    for name, _uid in config.IG_ACCOUNTS:
+        assert f"ig_story|{name}" in cat
+    assert "ig_post_miyamoto_doppo|miyamoto_doppo" in cat
+    assert "x|@miyamoto_hiroji" in cat
+    assert "x_paonews_info|@paonews_info" in cat
+    assert "x_elekashi_ofcl|@elekashi_ofcl" in cat
+    assert "youtube_UCcUcK64JLSZAPUfG07s-Wew|artist" in cat
+    assert "youtube_UCT9b7yx6qEl0q994k4s6IEw|band" in cat
+    assert "tiktok_miyamoto_hiroji_|@miyamoto_hiroji_" in cat
+    assert "site_miyamoto|artist site" in cat
+    assert "site_ekfc|band fc" in cat
+    assert "site_elephantsinc|mgmt site" in cat
+
+
+def test_catalog_hash_is_stable_and_sensitive():
+    from monitor.notification import ekdb_push
+    cat = ekdb_push.sources_catalog()
+    h = ekdb_push.catalog_hash(cat)
+    assert h == ekdb_push.catalog_hash(cat)
+    changed = [dict(cat[0], label="changed")] + cat[1:]
+    assert ekdb_push.catalog_hash(changed) != h
+
+
+def test_push_disabled_returns_ok_without_request(monkeypatch):
+    """未配置时 push() 直接返回成功且不发请求（调用方可无条件调用）。"""
+    from monitor import config
+    from monitor.notification import ekdb_push
+    monkeypatch.setattr(config, "EKDB_DISPATCH_URL", "")
+
+    def boom(*a, **k):
+        raise AssertionError("未配置时不应发请求")
+
+    monkeypatch.setattr(ekdb_push.requests, "post", boom)
+    ok, _ = ekdb_push.push([_u("1")], sources_only=True)
+    assert ok is True

@@ -23,11 +23,14 @@ sends one email per new item. Runs entirely on GitHub Actions (free tier).
 | Secret | Purpose |
 |---|---|
 | `IG_COOKIE` | session cookie string for the Instagram source |
+| `IG_COOKIE_LABELS` | optional comma-separated names for each `IG_COOKIE` line, so alert emails name the account (optional) |
 | `IG_POST_SESSION_JSON` | instagrapi `session.json` content for the Instagram posts/reels source |
 | `SMTP_USER` | sender email account |
 | `SMTP_PASS` | sender SMTP app-password |
 | `NOTIFY_TO` | recipient email address |
 | `YOUTUBE_API_KEY` | YouTube Data API v3 key for the feed fallback (optional) |
+| `EKDB_DISPATCH_URL` | ekdb site root URL for subscriber dispatch (optional — unset = feature off) |
+| `EKDB_MONITOR_TOKEN` | Bearer token matching ekdb's `EKDB_MONITOR_TOKEN` env var (optional) |
 
 Optional: `NOTIFY_TITLE_PREFIX` — subject prefix for sources not explicitly
 mapped in `monitor/config.py` (`NOTIFY_PREFIX` / `NOTIFY_PREFIX_BY_ACCOUNT`:
@@ -49,6 +52,25 @@ mapped in `monitor/config.py` (`NOTIFY_PREFIX` / `NOTIFY_PREFIX_BY_ACCOUNT`:
 
 Runtime state is stored in `monitor_state.json` and committed back to this
 repository by CI (per-source seen/notified/baseline bookkeeping).
+
+## ekdb dispatch (optional subscriber notifications)
+
+When `EKDB_DISPATCH_URL` + `EKDB_MONITOR_TOKEN` are set, every new update is —
+in addition to your own email (unchanged path) — batch-POSTed to ekdb's internal
+endpoint, where ekdb matches per-user subscriptions and sends notification
+emails (ekdb owns users / verified emails / subscription choices). Semantics:
+
+- **At-least-once on this side**: a failed push keeps the items in a per-source
+  `unpushed` queue in `monitor_state.json` and re-pushes them next round
+  (together with any new items). ekdb dedupes by
+  `(source_key, external_id)` unique constraint, so re-pushes are safe.
+- The **source catalog** (all monitored accounts, derived from `config.py`)
+  travels with every push; when the catalog hash changes (account added or
+  removed) it is synced on the next round even without new updates, so ekdb's
+  subscription checkboxes stay in sync automatically.
+- Unset either variable = feature off; monitoring and your own email behave
+  exactly as before. ekdb-side setup (SMTP, tables, endpoints) is documented in
+  the ekdb repository.
 
 Reliability: sources depend on third-party public endpoints and may degrade
 independently; failures are logged per source and trigger alert emails after
@@ -82,3 +104,13 @@ count as checks and polling resumes on the first tick after 07:00), and the
 polled 1/N as often, and a rejected cookie fails over to the next one within
 the same round. All cookies dead ⇒ loud alert + failure cooldown instead of
 hammering Instagram.
+
+Alert emails identify the account: every error raised by the story source is
+tagged with the cookie it was using — the matching name from the optional
+`IG_COOKIE_LABELS` secret (comma-separated, same order as the `IG_COOKIE`
+lines) or `index/total`, plus the `ds_user_id` extracted from the cookie
+itself. When all cookies are dead, the alert lists every cookie's failure
+reason, so there is no guessing which account to re-login. A cookie that dies
+while rotation covers it (the round still succeeds) triggers its own one-time
+alert immediately; the alert re-arms automatically once that cookie serves
+again, and the test-email health snapshot lists taken-over cookies too.

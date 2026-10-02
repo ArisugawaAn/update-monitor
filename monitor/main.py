@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 from monitor import config
 from monitor.models import CheckpointError
-from monitor.notification import email
+from monitor.notification import ekdb_push, email
 from monitor.storage import state as st
 
 
@@ -131,6 +131,25 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
         st.clear_alert_flag(state, src.key, "checkpoint")  # 恢复后重新武装报警
         st.clear_alert_flag(state, src.key, "ratelimit")  # 限流报警同样重新武装
         counters[src.key] = 0
+        # ---- ig_story 单号失效提醒：轮换顶上 ≠ 没事，挂了的号立刻报一次 ----
+        # 全部失效走上面的失败路径（汇总错误已逐号列明），这里只兜"部分失效、
+        # 轮换成功"的静默情况：按 (源, cookie 标识) 事件去重，只报一次；
+        # 失效号恢复服务（清 flag）后再次失效可再报。
+        dead_note = ""
+        report = getattr(src, "cookie_status", None)
+        if callable(report):
+            serving, dead = report()
+            st.clear_alert_flag(state, src.key, f"cookie:{serving}")  # 恢复 → 重新武装
+            for ctag, reason in dead:
+                if not st.get_alert_flag(state, src.key, f"cookie:{ctag}"):
+                    st.set_alert_flag(state, src.key, f"cookie:{ctag}")
+                    email.send_alert(
+                        f"【监测报警】{src.key} 监控号 {ctag} 会话失效（其余号已接管）",
+                        f"{reason}\n\n本轮已由其余 cookie 自动接管，监测未中断；"
+                        f"请重新导出该号 Cookie 并更新 IG_COOKIE。"
+                        f"本事件只报一次，该号恢复服务后自动重新武装。")
+            if dead:
+                dead_note = f" [⚠ 失效已接管: {'、'.join(t for t, _ in dead)}]"
         notify_list, baseline = st.diff_new(state, src.key, updates)
         st.save_state(config.STATE_FILE, state)
         delivered: list = []
@@ -140,8 +159,33 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
         if delivered:
             st.mark_notified(state, src.key, delivered)
             st.save_state(config.STATE_FILE, state)
+        # ---- ekdb 分发（可选）：新动态 + 失败遗留一并重推，至少一次投递 ----
+        # ekdb 端按 (source_key, external_id) 幂等去重，重推安全；推送失败把
+        # 待推列表留在 state 的 unpushed 队列下轮重试。你的邮件路径不受影响。
+        push_note = ""
+        if ekdb_push.configured():
+            catalog = ekdb_push.sources_catalog()
+            cat_hash = ekdb_push.catalog_hash(catalog)
+            pending_push = list(notify_list) + st.get_unpushed(state, src.key)
+            if pending_push:
+                ok_push, msg = ekdb_push.push(pending_push, catalog)
+                if ok_push:
+                    st.clear_unpushed(state, src.key)
+                    st.set_catalog_hash(state, cat_hash)
+                    push_note = f" [ekdb: {msg}]"
+                else:
+                    st.set_unpushed(state, src.key, pending_push)
+                    push_note = f" [ekdb 推送失败，下轮重推: {msg}]"
+            elif st.get_catalog_hash(state) != cat_hash:
+                # 无新动态但源目录变了（加/减账号）：同步一次目录
+                ok_cat, msg = ekdb_push.push([], catalog, sources_only=True)
+                if ok_cat:
+                    st.set_catalog_hash(state, cat_hash)
+                    push_note = " [ekdb 源目录已同步]"
+                else:
+                    push_note = f" [ekdb 目录同步失败: {msg}]"
         tag = " [baseline 建立，历史不通知]" if baseline else ""
-        summary.append((src.key, f"在场 {len(updates)} / 新 {len(notify_list)}{tag}"))
+        summary.append((src.key, f"在场 {len(updates)} / 新 {len(notify_list)}{tag}{push_note}{dead_note}"))
     return summary, ok, fail
 
 

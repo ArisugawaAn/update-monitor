@@ -9,6 +9,7 @@
 - cooldown_until_tick：per-source 失败冷却的最后一个被跳过轮次（仅
   config.COOLDOWN_SOURCES 内的源会写入）；冷却轮不发请求、不计成功/失败
 """
+import dataclasses
 import json
 from pathlib import Path
 
@@ -193,3 +194,62 @@ def is_new_hour(state: dict, now_ts: float) -> bool:
 def set_sweep_hour(state: dict, now_ts: float) -> None:
     """sweep 发生时记录小时键（必须在发起任何 HTTP 请求前调用）。"""
     state["last_sweep_hour"] = hour_key(now_ts)
+
+
+# ---- ekdb 分发待推队列（至少一次投递：推送失败保留，下轮重推；ekdb 端幂等去重） ----
+UNPUSHED_CAP = 50  # 单源上限（超出丢最旧；极端场景，ekdb 端动态存档仍不丢历史）
+
+_UPDATE_DT_FIELDS = ("published_at", "detected_at")
+
+
+def _update_to_dict(u: Update) -> dict:
+    d = dataclasses.asdict(u)
+    for f in _UPDATE_DT_FIELDS:
+        if d.get(f) is not None:
+            d[f] = d[f].isoformat()
+    return d
+
+
+def _update_from_dict(d: dict) -> Update:
+    from datetime import datetime
+    kw = dict(d)
+    for f in _UPDATE_DT_FIELDS:
+        v = kw.get(f)
+        if isinstance(v, str):
+            kw[f] = datetime.fromisoformat(v)
+    return Update(**kw)
+
+
+def get_unpushed(state: dict, key: str) -> list[Update]:
+    """返回该源待推送队列中的 Update（旧 state / 缺字段返回空）。"""
+    b = state.get("sources", {}).get(key)
+    if not b:
+        return []
+    out: list[Update] = []
+    for d in b.get("unpushed", []):
+        try:
+            out.append(_update_from_dict(d))
+        except Exception:
+            continue  # 单条损坏不拖垮整队
+    return out
+
+
+def set_unpushed(state: dict, key: str, updates: list[Update]) -> None:
+    """覆盖待推队列（超出上限丢最旧）。"""
+    b = _bucket(state, key)
+    b["unpushed"] = [_update_to_dict(u) for u in updates][-UNPUSHED_CAP:]
+
+
+def clear_unpushed(state: dict, key: str) -> None:
+    b = state.get("sources", {}).get(key)
+    if b and b.get("unpushed"):
+        b["unpushed"] = []
+
+
+def get_catalog_hash(state: dict) -> str:
+    return state.get("ekdb_catalog_hash", "")
+
+
+def set_catalog_hash(state: dict, h: str) -> None:
+    """源目录快照哈希：仅目录变化时才向 ekdb 同步目录（平时不产生额外请求）。"""
+    state["ekdb_catalog_hash"] = h

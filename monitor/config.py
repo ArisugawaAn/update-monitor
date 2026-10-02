@@ -24,6 +24,14 @@ def ig_cookies() -> list[str]:
     return [line.strip() for line in raw.splitlines() if line.strip()]
 
 
+# 报警邮件定位账号用：按顺序给 IG_COOKIE 的每个 cookie 命名（逗号分隔，与
+# IG_COOKIE 各行一一对应，如 "viewer-a,viewer-b,viewer-c"）。未配置时报警里
+# 退回 "序号/总数·uid<ds_user_id>"（uid 从 cookie 自动提取），同样能对到账号。
+IG_COOKIE_LABELS = [s.strip() for s in
+                    os.environ.get("IG_COOKIE_LABELS", "").replace("，", ",").split(",")
+                    if s.strip()]
+
+
 IG_ACCOUNTS = [  # (用户名, 用户ID) —— ID 永久不变，POC 已实测
     ("miyamoto_doppo", 10584438821),
     ("elephantsinc_official", 66821998949),
@@ -32,7 +40,7 @@ IG_ACCOUNTS = [  # (用户名, 用户ID) —— ID 永久不变，POC 已实测
 IG_WEB_APP_ID = "936619743392459"
 
 # ---- Instagram Post/Reel（instagrapi 私有 API，与 Story 源分离） ----------
-# 频率：30 分钟源（CHECK_INTERVAL_TICKS = 6）；失败后另见 COOLDOWN_*。
+# 频率：60 分钟源（CHECK_INTERVAL_TICKS = 12）；失败后另见 COOLDOWN_*。
 IG_POST_ACCOUNTS = [  # (用户名, 用户ID)
     ("miyamoto_doppo", 10584438821),
     ("elephantsinc_official", 66821998949),
@@ -133,7 +141,7 @@ def notify_prefix(source_key: str, account_name: str = "") -> str:
 #   5 分钟源每轮查，10 分钟源每 2 轮查，15 分钟源每 3 轮查，30 分钟源每 6 轮查。
 CHECK_INTERVAL_MINUTES = {  # 保留：人类可读的期望 cadence（实际门控用下面的轮次）
     "ig_story": 10,
-    "ig_post": 30,  # 私有 API：进一步降频以降低被 IG 限流/封禁的风险
+    "ig_post": 60,  # 私有 API：60 分钟一查，降低被 IG 限流/封禁的风险
     "x": 5,
     "x_paonews_info": 15,
     "x_hmnews_info": 15,
@@ -149,7 +157,7 @@ DEFAULT_CHECK_INTERVAL_MINUTES = 5  # 未知新源的兜底：保持最高频率
 
 CHECK_INTERVAL_TICKS = {  # 实际门控：每 N 轮查一次
     "ig_story": 2,  # ≈10 分钟（私有 API 会话：降频降低风控压力）
-    "ig_post": 6,  # ≈30 分钟；失败后由下面的 COOLDOWN_* 进一步降频
+    "ig_post": 12,  # ≈60 分钟；失败后由下面的 COOLDOWN_* 进一步降频
     "x": 1,  # 主号 @miyamoto_hiroji：每轮查，不受次要号影响
     "x_paonews_info": 3,  # 次要 X 号：每 3 轮（≈15 分钟）查
     "x_hmnews_info": 3,
@@ -262,3 +270,14 @@ def cooldown_ticks(key: str, err_text: str = "") -> int:
     if key not in COOLDOWN_SOURCES:
         return 0
     return RATE_LIMIT_COOLDOWN_TICKS if is_rate_limited(err_text) else COOLDOWN_TICKS
+
+
+# ---- ekdb 分发（可选）：新动态同步推送到 ekdb 通知订阅平台 -------------------
+# 配置后，每条新动态除发你自己的邮件（NOTIFY_TO，行为不变）外，还会批量 POST 给
+# ekdb 内部接口，由 ekdb 按用户订阅关系分发邮件（ekdb 端按 source_key+external_id
+# 唯一约束幂等去重，重推安全）。两个 Secrets / 环境变量：
+#   EKDB_DISPATCH_URL  — ekdb 站点根地址（如 https://ekdb.onrender.com）
+#   EKDB_MONITOR_TOKEN — 与 ekdb 端 EKDB_MONITOR_TOKEN 一致的 Bearer token
+# 未配置 = 功能关闭，监测与邮件行为与改动前完全一致。
+EKDB_DISPATCH_URL = os.environ.get("EKDB_DISPATCH_URL", "").rstrip("/")
+EKDB_MONITOR_TOKEN = os.environ.get("EKDB_MONITOR_TOKEN", "")

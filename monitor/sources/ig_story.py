@@ -4,6 +4,11 @@
   生产：IG_COOKIE 可含**多个** cookie（换行或 "|||" 分隔），每 10 分钟窗口
         轮换起始号均摊压力；某个 cookie 被 IG 拒绝（匿名空响应/401）时本轮
         立即切换下一个，全部失效才报错——10 分钟节奏不因单号死亡而中断。
+        报错一律带 cookie 标识（IG_COOKIE_LABELS 命名或 "序号/总数" +
+        ds_user_id），报警邮件可定位到具体账号，不用逐个排查。
+        单号失效但被其余号接管时也立刻单发一封提醒（按事件去重、恢复服务
+        后自动重新武装），不留"看似正常"的静默死亡；test-email 健康快照
+        同样标注被接管的号。
   本地 POC：instaloader session 文件（惰性导入，生产无需安装）。
 """
 import time
@@ -19,7 +24,39 @@ _API = "https://www.instagram.com/api/v1/feed/reels_media/"
 _ROTATE_WINDOW = 600  # 秒；轮换窗口 ≈ 检查间隔，相邻窗口用不同起始 cookie
 
 _LAST_AUTH: bool | None = None  # 最近一次 check 的会话判定（test-email 健康检查展示用）
-_LAST_COOKIE = ""               # 成功服务的 cookie 序号，如 "2/3"
+_LAST_COOKIE = ""               # 成功服务的 cookie 标识（tag），如 "viewer-a·uid111" 或 "2/3"
+_LAST_DEAD: list[tuple[str, str]] = []  # 最近一次 check 中会话失效的 (标识, 原因)，供单号报警
+
+
+def _ds_user_id(cookie: str) -> str:
+    """从整串 Cookie 头提取 ds_user_id（该会话属主账号的 ID），提取不到返回空串。"""
+    for part in cookie.replace("\n", ";").split(";"):
+        k, _, v = part.strip().partition("=")
+        if k == "ds_user_id":
+            return v.strip()
+    return ""
+
+
+def _cookie_tag(cookies: list[str], idx: int) -> str:
+    """报警邮件/健康检查用的 cookie 标识：IG_COOKIE_LABELS 命名 > "序号/总数"；
+    ds_user_id 恒附上——它与 secret 里的排列顺序无关，删号重排后仍能对到账号。"""
+    labels = config.IG_COOKIE_LABELS
+    name = labels[idx] if idx < len(labels) else f"{idx + 1}/{len(cookies)}"
+    uid = _ds_user_id(cookies[idx])
+    return f"{name}·uid{uid}" if uid else name
+
+
+def _with_tag(e: Exception, tag: str) -> Exception:
+    """给错误附上 cookie 标识后返回（保留异常类型，供 main 按类型分支）。
+
+    SourceError/CheckpointError 直接改消息；其余异常（requests 网络错误、
+    JSON 解析错误等）包成 SourceError 并保留原类型名，报警邮件不再只有裸类型。
+    """
+    msg = f"[{tag}] {e}"
+    if isinstance(e, (SourceError, CheckpointError)):
+        e.args = (msg,)
+        return e
+    return SourceError(f"{type(e).__name__}: {msg}")
 
 
 def _headers() -> dict:
@@ -122,37 +159,56 @@ def _parse(data: dict) -> list[Update]:
 
 
 def check() -> list[Update]:
-    global _LAST_AUTH, _LAST_COOKIE
+    global _LAST_AUTH, _LAST_COOKIE, _LAST_DEAD
     cookies = config.ig_cookies()
     if not cookies:  # 本地 POC：instaloader session 文件
         data = _fetch(_session_instaloader())
-        _LAST_AUTH, _LAST_COOKIE = True, "session-file"
+        _LAST_AUTH, _LAST_COOKIE, _LAST_DEAD = True, "session-file", []
         return _parse(data)
     # 生产：多 cookie 轮换 + 失效切换。"会话失效"的 cookie 立即跳过换下一个；
     # 其他错误（网络/限流/HTTP）与账号无关，直接上抛不尝试剩余 cookie。
+    # 所有抛出的错误都带 cookie 标识（命名/序号 + ds_user_id），
+    # 报警邮件（连续失败/限流/checkpoint）据此可定位到具体账号。
     start = int(time.time() // _ROTATE_WINDOW) % len(cookies)
-    last_err: Exception | None = None
+    attempts: list[str] = []          # 每个 cookie 的失效原因；全部失效时并入最终错误
+    dead: list[tuple[str, str]] = []  # (标识, 原因)：本轮会话失效的号，供 main 单号报警
     for offset in range(len(cookies)):
         idx = (start + offset) % len(cookies)
+        tag = _cookie_tag(cookies, idx)
         try:
             data = _fetch(_session_cookie(cookies[idx]))
-        except CheckpointError:
-            raise  # 账号级验证要求，交给 main 的 checkpoint 报警处理
+        except CheckpointError as e:
+            raise _with_tag(e, tag)  # 账号级验证要求，交给 main 的 checkpoint 报警处理
         except SourceError as e:
             if "会话失效" not in str(e):
-                raise
-            last_err = e
+                raise _with_tag(e, tag)
+            attempts.append(f"[{tag}] {e}")
+            dead.append((tag, str(e)))
             continue
-        _LAST_AUTH, _LAST_COOKIE = True, f"{idx + 1}/{len(cookies)}"
+        except Exception as e:  # 网络等意外错误：语义不变（上抛），只补上当时在用哪个 cookie
+            raise _with_tag(e, tag)
+        _LAST_AUTH, _LAST_COOKIE, _LAST_DEAD = True, tag, dead
         return _parse(data)
-    _LAST_AUTH, _LAST_COOKIE = False, f"0/{len(cookies)}"
-    raise last_err or SourceError("会话失效：全部 IG_COOKIE 均被 IG 拒绝")
+    _LAST_AUTH, _LAST_COOKIE, _LAST_DEAD = False, f"0/{len(cookies)}", dead
+    raise SourceError(f"会话失效：全部 {len(cookies)} 个 cookie 均被 IG 拒绝 —— "
+                      f"{'；'.join(attempts)}")
+
+
+def cookie_status() -> tuple[str, list[tuple[str, str]]]:
+    """最近一次 check 的 cookie 状态：(成功服务的标识, 会话失效的 (标识, 原因) 列表)。
+
+    供 main 对"轮换顶上但单号已死"发单号报警（按事件去重、恢复后重新武装）。
+    """
+    return _LAST_COOKIE, list(_LAST_DEAD)
 
 
 def health_note() -> str:
     """test-email 健康检查的会话状态说明（基于最近一次 check 的响应判据）。"""
     if _LAST_AUTH:
-        return f"｜已登录✓ 会话有效（cookie {_LAST_COOKIE}，响应含 reels_media 标记）"
+        note = f"｜已登录✓ 会话有效（cookie {_LAST_COOKIE}，响应含 reels_media 标记）"
+        if _LAST_DEAD:  # 轮换顶上了 ≠ 没事：被接管的失效号在健康快照里也要看得见
+            note += f"｜⚠ 会话失效已由其余号接管: {'、'.join(t for t, _ in _LAST_DEAD)}"
+        return note
     if _LAST_AUTH is False:
         return f"｜⚠ 未登录，Cookie 已失效（{_LAST_COOKIE}）"
     return ""  # 本进程尚未跑过 check
@@ -161,4 +217,4 @@ def health_note() -> str:
 def source():
     from types import SimpleNamespace
     return SimpleNamespace(key="ig_story", platform="instagram", check=check,
-                           health_note=health_note)
+                           health_note=health_note, cookie_status=cookie_status)
