@@ -102,20 +102,81 @@ def probe_instaloader() -> list:
     return results
 
 
+def probe_cookie_web() -> list:
+    """方法 D：生产 story cookie（IG_COOKIE secret）+ www web 端点查 post。
+
+    与 ig_story 同机制（浏览器 UA + x-ig-app-id + 整串 Cookie 头），端点换成
+    post 相关：验证 cookie 会话能否从数据中心出口解锁被 IP 门禁挡住的
+    web_profile_info / feed/user。这是 misiektoja 项目推荐做法的实测。
+    日志绝不打印 cookie 本体（GitHub 亦会自动打码 secret）。
+    """
+    import os
+    cookie = os.environ.get("IG_COOKIE", "").strip()
+    if not cookie:
+        print("  IG_COOKIE 未设置 → 跳过", flush=True)
+        return ["skipped"]
+    import requests
+    results = []
+    s = requests.Session()
+    s.headers.update({
+        "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                       "(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"),
+        "x-ig-app-id": "936619743392459",
+        "x-requested-with": "XMLHttpRequest",
+        "accept": "*/*",
+        "referer": "https://www.instagram.com/",
+    })
+    first_cookie = cookie.replace("|||", "\n").split("\n")[0].strip()
+    for part in first_cookie.replace("\n", ";").split(";"):
+        if "=" in part:
+            k, v = part.split("=", 1)
+            s.cookies.set(k.strip(), v.strip(), domain=".instagram.com")
+    csrf = s.cookies.get("csrftoken")
+    if csrf:
+        s.headers["X-CSRFToken"] = csrf
+    for i in range(ATTEMPTS):
+        try:
+            r = s.get("https://www.instagram.com/api/v1/users/web_profile_info/",
+                      params={"username": USERNAME}, timeout=25)
+            print(f"  [{i+1}] web_profile_info HTTP {r.status_code}", flush=True)
+            if r.status_code == 200:
+                j = r.json().get("data", {}).get("user", {})
+                print(f"      user={j.get('username')} "
+                      f"posts={j.get('edge_owner_to_timeline_media', {}).get('count')}",
+                      flush=True)
+                r2 = s.get(f"https://www.instagram.com/api/v1/feed/user/{USERID}/",
+                           params={"count": 5}, timeout=25)
+                print(f"      feed/user HTTP {r2.status_code}", flush=True)
+                if r2.status_code == 200:
+                    for it in r2.json().get("items", [])[:5]:
+                        print(f"        {it.get('code')} "
+                              f"{'video' if it.get('media_type') == 2 else 'image'}",
+                              flush=True)
+                    results.append("OK")
+                else:
+                    print(f"      feed body: {r2.text[:120]}", flush=True)
+                    results.append(f"profile_ok/feed_{r2.status_code}")
+            else:
+                print(f"      body: {r.text[:120]}", flush=True)
+                results.append(f"http_{r.status_code}")
+        except Exception as e:
+            print(f"  [{i+1}] FAIL: {type(e).__name__}: {str(e)[:120]}", flush=True)
+            results.append(type(e).__name__)
+        if i < ATTEMPTS - 1:
+            time.sleep(GAP)
+    return results
+
+
 def main():
-    print(f"IG anonymous probe v2: {USERNAME}({USERID}) attempts={ATTEMPTS}", flush=True)
-    print("\n===== A. instagrapi public_transport=curl + chrome136 =====", flush=True)
-    ra = probe_instagrapi()
+    print(f"IG anonymous probe v3: {USERNAME}({USERID}) attempts={ATTEMPTS}", flush=True)
+    print("\n===== D. story-cookie web 会话查 post（核心验证）=====", flush=True)
+    rd = probe_cookie_web()
     time.sleep(GAP)
-    print("\n===== C. anonymous graphql doc_id timeline (核心验证) =====", flush=True)
+    print("\n===== C. anonymous graphql doc_id timeline =====", flush=True)
     rc = probe_graphql_timeline()
-    time.sleep(GAP)
-    print("\n===== B. Instaloader from_id + get_posts (对照) =====", flush=True)
-    rb = probe_instaloader()
     print("\n===== SUMMARY =====", flush=True)
-    print(f"A instagrapi-public: {ra}", flush=True)
-    print(f"C graphql-timeline:  {rc}", flush=True)
-    print(f"B instaloader:       {rb}", flush=True)
+    print(f"D cookie-web:       {rd}", flush=True)
+    print(f"C graphql-timeline: {rc}", flush=True)
 
 
 if __name__ == "__main__":
