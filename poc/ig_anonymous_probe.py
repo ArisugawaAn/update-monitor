@@ -103,12 +103,15 @@ def probe_instaloader() -> list:
 
 
 def probe_cookie_web() -> list:
-    """方法 D：生产 story cookie（IG_COOKIE secret）+ www web 端点查 post。
+    """方法 D（v2）：生产 story cookie 在 Actions 出口测 post 端点。
 
-    与 ig_story 同机制（浏览器 UA + x-ig-app-id + 整串 Cookie 头），端点换成
-    post 相关：验证 cookie 会话能否从数据中心出口解锁被 IP 门禁挡住的
-    web_profile_info / feed/user。这是 misiektoja 项目推荐做法的实测。
-    日志绝不打印 cookie 本体（GitHub 亦会自动打码 secret）。
+    历史结论（miyamoto-monitor-test/cooldown_retest.py，2026-09）：
+      本地实测 web_profile_info / feed/user 每被触碰一次就会续期账号的
+      feedback_required 标记（账号"冷却不了"的主因）→ 本探针绝不重试、
+      每个端点只碰一次、彻底不碰 wpi（Actions 上已实测 429）。
+    流程（共 2 个请求）：
+      [1] reels_media 阳性对照 —— 生产每 10 分钟都在打，证明 cookie 在本出口有效
+      [2] feed/user/{uid} —— 矩阵中唯一未测格子：post 端点 × Actions × cookie
     """
     import os
     cookie = os.environ.get("IG_COOKIE", "").strip()
@@ -134,49 +137,50 @@ def probe_cookie_web() -> list:
     csrf = s.cookies.get("csrftoken")
     if csrf:
         s.headers["X-CSRFToken"] = csrf
-    for i in range(ATTEMPTS):
-        try:
-            r = s.get("https://www.instagram.com/api/v1/users/web_profile_info/",
-                      params={"username": USERNAME}, timeout=25)
-            print(f"  [{i+1}] web_profile_info HTTP {r.status_code}", flush=True)
-            if r.status_code == 200:
-                j = r.json().get("data", {}).get("user", {})
-                print(f"      user={j.get('username')} "
-                      f"posts={j.get('edge_owner_to_timeline_media', {}).get('count')}",
-                      flush=True)
-                r2 = s.get(f"https://www.instagram.com/api/v1/feed/user/{USERID}/",
-                           params={"count": 5}, timeout=25)
-                print(f"      feed/user HTTP {r2.status_code}", flush=True)
-                if r2.status_code == 200:
-                    for it in r2.json().get("items", [])[:5]:
-                        print(f"        {it.get('code')} "
-                              f"{'video' if it.get('media_type') == 2 else 'image'}",
-                              flush=True)
-                    results.append("OK")
-                else:
-                    print(f"      feed body: {r2.text[:120]}", flush=True)
-                    results.append(f"profile_ok/feed_{r2.status_code}")
+
+    print("  [1] reels_media 阳性对照（cookie 有效性）", flush=True)
+    try:
+        r = s.get("https://www.instagram.com/api/v1/feed/reels_media/",
+                  params=[("user_ids", USERID)], timeout=25)
+        authed = "reels_media" in r.text
+        print(f"      HTTP {r.status_code} authed={authed}", flush=True)
+        results.append(f"control_{r.status_code}")
+    except Exception as e:
+        print(f"      FAIL: {type(e).__name__}: {str(e)[:120]}", flush=True)
+        results.append("control_fail")
+    time.sleep(GAP)
+
+    print("  [2] feed/user —— post 端点（唯一未知项，单次触碰，不重试）", flush=True)
+    try:
+        r = s.get(f"https://www.instagram.com/api/v1/feed/user/{USERID}/",
+                  params={"count": 5}, timeout=25)
+        print(f"      HTTP {r.status_code}", flush=True)
+        if r.status_code == 200:
+            items = r.json().get("items") or []
+            for it in items[:5]:
+                pt = it.get("product_type", "")
+                kind = "REEL" if pt == "clips" else "POST"
+                print(f"        {it.get('code')} | {kind} | "
+                      f"{(it.get('caption', {}).get('text') or '')[:30]!r}", flush=True)
+            results.append(f"OK({len(items)})")
+        else:
+            print(f"      body: {r.text[:150]}", flush=True)
+            if "feedback_required" in r.text:
+                results.append("feedback_required!")
             else:
-                print(f"      body: {r.text[:120]}", flush=True)
                 results.append(f"http_{r.status_code}")
-        except Exception as e:
-            print(f"  [{i+1}] FAIL: {type(e).__name__}: {str(e)[:120]}", flush=True)
-            results.append(type(e).__name__)
-        if i < ATTEMPTS - 1:
-            time.sleep(GAP)
+    except Exception as e:
+        print(f"      FAIL: {type(e).__name__}: {str(e)[:120]}", flush=True)
+        results.append(type(e).__name__)
     return results
 
 
 def main():
-    print(f"IG anonymous probe v3: {USERNAME}({USERID}) attempts={ATTEMPTS}", flush=True)
-    print("\n===== D. story-cookie web 会话查 post（核心验证）=====", flush=True)
+    print(f"IG anonymous probe v4: {USERNAME}({USERID})", flush=True)
+    print("\n===== D. story-cookie × Actions 出口 × feed/user（唯一未测格子）=====", flush=True)
     rd = probe_cookie_web()
-    time.sleep(GAP)
-    print("\n===== C. anonymous graphql doc_id timeline =====", flush=True)
-    rc = probe_graphql_timeline()
     print("\n===== SUMMARY =====", flush=True)
-    print(f"D cookie-web:       {rd}", flush=True)
-    print(f"C graphql-timeline: {rc}", flush=True)
+    print(f"D cookie-feed/user: {rd}", flush=True)
 
 
 if __name__ == "__main__":
