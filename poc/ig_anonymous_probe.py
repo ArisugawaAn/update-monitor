@@ -175,12 +175,55 @@ def probe_cookie_web() -> list:
     return results
 
 
+def probe_feed_anon() -> list:
+    """方法 E（PR instaloader#2722 精确复刻）：匿名 feed/user/{id}/ 拉时间线。
+
+    关键差异（相对此前失败的测试）：
+      - 不带任何 cookie、不带 x-ig-app-id、不带 referer（纯净匿名）
+      - 使用 instaloader 自带的 context.get_json（与 PR 完全相同的头与 UA）
+      - 首页 params 只有 {'count': 12}；翻页用 {'count': 12, 'max_id': next_max_id}
+    """
+    from instaloader import Instaloader
+    results = []
+    for i in range(ATTEMPTS):
+        L = Instaloader(quiet=True, download_comments=False, save_metadata=False,
+                        post_metadata_txt_pattern="")
+        L.context.max_connection_attempts = 2
+        try:
+            data = L.context.get_json(f"api/v1/feed/user/{USERID}/", params={"count": 12})
+            items = data.get("items") or []
+            print(f"  [{i+1}] feed OK: items={len(items)} "
+                  f"more_available={data.get('more_available')} "
+                  f"next_max_id={'有' if data.get('next_max_id') else '无'}", flush=True)
+            for it in items[:5]:
+                cap = ""
+                cap_edges = (it.get("edge_media_to_caption") or {}).get("edges") or []
+                if cap_edges:
+                    cap = cap_edges[0].get("node", {}).get("text", "")
+                print(f"        {it.get('code')} "
+                      f"{'video' if it.get('media_type') == 2 else 'image'} "
+                      f"| {cap[:36]}", flush=True)
+            if items and data.get("next_max_id"):
+                data2 = L.context.get_json(f"api/v1/feed/user/{USERID}/",
+                                           params={"count": 12,
+                                                   "max_id": data["next_max_id"]})
+                print(f"      翻页 OK: 第二页 items={len(data2.get('items') or [])}",
+                      flush=True)
+            results.append("OK" if items else "empty")
+        except Exception as e:
+            print(f"  [{i+1}] FAIL: {type(e).__name__}: {str(e)[:130]}", flush=True)
+            results.append(type(e).__name__)
+        if i < ATTEMPTS - 1:
+            time.sleep(GAP)
+    return results
+
+
 def main():
-    print(f"IG anonymous probe v4: {USERNAME}({USERID})", flush=True)
-    print("\n===== D. story-cookie × Actions 出口 × feed/user（唯一未测格子）=====", flush=True)
-    rd = probe_cookie_web()
-    print("\n===== SUMMARY =====", flush=True)
-    print(f"D cookie-feed/user: {rd}", flush=True)
+    print(f"IG anonymous probe v5: userid={USERID} attempts={ATTEMPTS}", flush=True)
+    print("===== E. anonymous feed/user/{id} (PR #2722 复刻，核心验证) =====", flush=True)
+    re_ = probe_feed_anon()
+    print("===== SUMMARY =====", flush=True)
+    print(f"E feed-anon: {re_}", flush=True)
 
 
 if __name__ == "__main__":
