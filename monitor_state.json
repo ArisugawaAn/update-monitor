@@ -36,8 +36,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 5680,
-   "last_checked_at": 1791081632.801506,
+   "last_checked_tick": 5682,
+   "last_checked_at": 1791082230.778526,
    "fail_streak": 0,
    "alerts": {
     "checkpoint": false,
@@ -71,16 +71,18 @@
     "2088640791745110020",
     "2100887565540974636",
     "2102002533896208455",
-    "2104535141951693285"
+    "2104535141951693285",
+    "2106570715105460242"
    ],
    "notified": [
     "2100887565540974636",
     "2102002533896208455",
-    "2104535141951693285"
+    "2104535141951693285",
+    "2106570715105460242"
    ],
    "baselined": true,
-   "last_checked_tick": 5681,
-   "last_checked_at": 1791081932.236797,
+   "last_checked_tick": 5682,
+   "last_checked_at": 1791082230.778526,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -103,8 +105,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 5680,
-   "last_checked_at": 1791081632.801506,
+   "last_checked_tick": 5682,
+   "last_checked_at": 1791082230.778526,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -127,8 +129,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 5680,
-   "last_checked_at": 1791081632.801506,
+   "last_checked_tick": 5682,
+   "last_checked_at": 1791082230.778526,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -144,8 +146,8 @@
     "count-8"
    ],
    "baselined": true,
-   "last_checked_tick": 5680,
-   "last_checked_at": 1791081632.801506,
+   "last_checked_tick": 5682,
+   "last_checked_at": 1791082230.778526,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -236,8 +238,8 @@
     "2105920847429115915"
    ],
    "baselined": true,
-   "last_checked_tick": 5681,
-   "last_checked_at": 1791081932.236797,
+   "last_checked_tick": 5682,
+   "last_checked_at": 1791082230.778526,
    "fail_streak": 0
   },
   "site_ek": {
@@ -362,15 +364,15 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 5670,
-   "last_checked_at": 1791078647.941921,
-   "fail_streak": 509,
-   "cooldown_until_tick": 5673,
+   "last_checked_tick": 5682,
+   "last_checked_at": 1791082230.778526,
+   "fail_streak": 510,
+   "cooldown_until_tick": 5685,
    "alerts": {
     "ratelimit": true
    }
   }
  },
- "tick": 5681,
+ "tick": 5682,
  "last_sweep_hour": "2026-10-04T02"
 }
