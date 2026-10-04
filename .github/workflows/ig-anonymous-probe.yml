@@ -29,4 +29,4 @@ jobs:
       - name: Probe (story-cookie web + anonymous graphql timeline)
         env:
           IG_COOKIE: ${{ secrets.IG_COOKIE }}
-        run: python poc/ig_anonymous_probe.py 10584438821 2
+        run: python poc/ig_anonymous_probe.py miyamoto_doppo 10584438821 2
