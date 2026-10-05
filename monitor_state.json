@@ -36,8 +36,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 5972,
-   "last_checked_at": 1791168028.104732,
+   "last_checked_tick": 5974,
+   "last_checked_at": 1791168630.070675,
    "fail_streak": 0,
    "alerts": {
     "checkpoint": true,
@@ -81,8 +81,8 @@
     "2106570715105460242"
    ],
    "baselined": true,
-   "last_checked_tick": 5973,
-   "last_checked_at": 1791168331.33958,
+   "last_checked_tick": 5974,
+   "last_checked_at": 1791168630.070675,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -105,8 +105,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 5972,
-   "last_checked_at": 1791168028.104732,
+   "last_checked_tick": 5974,
+   "last_checked_at": 1791168630.070675,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -129,8 +129,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 5972,
-   "last_checked_at": 1791168028.104732,
+   "last_checked_tick": 5974,
+   "last_checked_at": 1791168630.070675,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -146,8 +146,8 @@
     "count-8"
    ],
    "baselined": true,
-   "last_checked_tick": 5972,
-   "last_checked_at": 1791168028.104732,
+   "last_checked_tick": 5974,
+   "last_checked_at": 1791168630.070675,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -238,8 +238,8 @@
     "2105920847429115915"
    ],
    "baselined": true,
-   "last_checked_tick": 5973,
-   "last_checked_at": 1791168331.33958,
+   "last_checked_tick": 5974,
+   "last_checked_at": 1791168630.070675,
    "fail_streak": 0
   },
   "site_ek": {
@@ -364,15 +364,15 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 5962,
-   "last_checked_at": 1791165030.884504,
-   "fail_streak": 534,
-   "cooldown_until_tick": 5965,
+   "last_checked_tick": 5974,
+   "last_checked_at": 1791168630.070675,
+   "fail_streak": 535,
+   "cooldown_until_tick": 5977,
    "alerts": {
     "ratelimit": true
    }
   }
  },
- "tick": 5973,
+ "tick": 5974,
  "last_sweep_hour": "2026-10-05T02"
 }
