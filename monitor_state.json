@@ -26,8 +26,8 @@
     "630b43ead1b95be3"
    ],
    "baselined": true,
-   "last_checked_tick": 6548,
-   "last_checked_at": 1791345691.652599,
+   "last_checked_tick": 6551,
+   "last_checked_at": 1791346570.596361,
    "fail_streak": 0
   },
   "ig_story": {
@@ -36,16 +36,16 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 6547,
-   "last_checked_at": 1791345374.316812,
-   "fail_streak": 90,
+   "last_checked_tick": 6551,
+   "last_checked_at": 1791346570.596361,
+   "fail_streak": 91,
    "alerts": {
     "checkpoint": false,
     "cookie:1/3·uid23867251614": true,
     "cookie:3/3·uid62174512101": true,
     "cookie:1/3·uid9321283731": true
    },
-   "cooldown_until_tick": 6550
+   "cooldown_until_tick": 6554
   },
   "x": {
    "seen": [
@@ -81,8 +81,8 @@
     "2106570715105460242"
    ],
    "baselined": true,
-   "last_checked_tick": 6550,
-   "last_checked_at": 1791346279.304371,
+   "last_checked_tick": 6551,
+   "last_checked_at": 1791346570.596361,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -170,8 +170,8 @@
     "2106218675883888981"
    ],
    "baselined": true,
-   "last_checked_tick": 6548,
-   "last_checked_at": 1791345691.652599,
+   "last_checked_tick": 6551,
+   "last_checked_at": 1791346570.596361,
    "fail_streak": 0
   },
   "x_hmnews_info": {
@@ -202,8 +202,8 @@
     "2104923527778636046"
    ],
    "baselined": true,
-   "last_checked_tick": 6548,
-   "last_checked_at": 1791345691.652599,
+   "last_checked_tick": 6551,
+   "last_checked_at": 1791346570.596361,
    "fail_streak": 0
   },
   "x_elekashi_ofcl": {
@@ -238,8 +238,8 @@
     "2105920847429115915"
    ],
    "baselined": true,
-   "last_checked_tick": 6550,
-   "last_checked_at": 1791346279.304371,
+   "last_checked_tick": 6551,
+   "last_checked_at": 1791346570.596361,
    "fail_streak": 0
   },
   "site_ek": {
@@ -270,8 +270,8 @@
     "91ee995979bebb7b"
    ],
    "baselined": true,
-   "last_checked_tick": 6548,
-   "last_checked_at": 1791345691.652599,
+   "last_checked_tick": 6551,
+   "last_checked_at": 1791346570.596361,
    "fail_streak": 0
   },
   "site_ekfc": {
@@ -306,8 +306,8 @@
     "424"
    ],
    "baselined": true,
-   "last_checked_tick": 6548,
-   "last_checked_at": 1791345691.652599,
+   "last_checked_tick": 6551,
+   "last_checked_at": 1791346570.596361,
    "fail_streak": 0
   },
   "site_elephantsinc": {
@@ -319,8 +319,8 @@
     "news202609"
    ],
    "baselined": true,
-   "last_checked_tick": 6548,
-   "last_checked_at": 1791345691.652599,
+   "last_checked_tick": 6551,
+   "last_checked_at": 1791346570.596361,
    "fail_streak": 0
   },
   "ig_post": {
@@ -373,6 +373,6 @@
    }
   }
  },
- "tick": 6550,
+ "tick": 6551,
  "last_sweep_hour": "2026-10-07T04"
 }
