@@ -30,8 +30,8 @@
     "8c79e1b819305edd"
    ],
    "baselined": true,
-   "last_checked_tick": 7425,
-   "last_checked_at": 1791606671.320073,
+   "last_checked_tick": 7428,
+   "last_checked_at": 1791607574.695674,
    "fail_streak": 0
   },
   "ig_story": {
@@ -91,8 +91,8 @@
     "2108483103836803316"
    ],
    "baselined": true,
-   "last_checked_tick": 7427,
-   "last_checked_at": 1791607272.91996,
+   "last_checked_tick": 7428,
+   "last_checked_at": 1791607574.695674,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -180,8 +180,8 @@
     "2106218675883888981"
    ],
    "baselined": true,
-   "last_checked_tick": 7425,
-   "last_checked_at": 1791606671.320073,
+   "last_checked_tick": 7428,
+   "last_checked_at": 1791607574.695674,
    "fail_streak": 0
   },
   "x_hmnews_info": {
@@ -212,9 +212,9 @@
     "2104923527778636046"
    ],
    "baselined": true,
-   "last_checked_tick": 7425,
-   "last_checked_at": 1791606671.320073,
-   "fail_streak": 1
+   "last_checked_tick": 7428,
+   "last_checked_at": 1791607574.695674,
+   "fail_streak": 0
   },
   "x_elekashi_ofcl": {
    "seen": [
@@ -248,8 +248,8 @@
     "2105920847429115915"
    ],
    "baselined": true,
-   "last_checked_tick": 7427,
-   "last_checked_at": 1791607272.91996,
+   "last_checked_tick": 7428,
+   "last_checked_at": 1791607574.695674,
    "fail_streak": 0
   },
   "site_ek": {
@@ -280,8 +280,8 @@
     "91ee995979bebb7b"
    ],
    "baselined": true,
-   "last_checked_tick": 7425,
-   "last_checked_at": 1791606671.320073,
+   "last_checked_tick": 7428,
+   "last_checked_at": 1791607574.695674,
    "fail_streak": 0
   },
   "site_ekfc": {
@@ -316,8 +316,8 @@
     "424"
    ],
    "baselined": true,
-   "last_checked_tick": 7425,
-   "last_checked_at": 1791606671.320073,
+   "last_checked_tick": 7428,
+   "last_checked_at": 1791607574.695674,
    "fail_streak": 0
   },
   "site_elephantsinc": {
@@ -329,8 +329,8 @@
     "news202609"
    ],
    "baselined": true,
-   "last_checked_tick": 7425,
-   "last_checked_at": 1791606671.320073,
+   "last_checked_tick": 7428,
+   "last_checked_at": 1791607574.695674,
    "fail_streak": 0
   },
   "ig_post": {
@@ -374,15 +374,15 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 7416,
-   "last_checked_at": 1791603970.792337,
-   "fail_streak": 657,
-   "cooldown_until_tick": 7419,
+   "last_checked_tick": 7428,
+   "last_checked_at": 1791607574.695674,
+   "fail_streak": 658,
+   "cooldown_until_tick": 7431,
    "alerts": {
     "ratelimit": true
    }
   }
  },
- "tick": 7427,
+ "tick": 7428,
  "last_sweep_hour": "2026-10-10T04"
 }
