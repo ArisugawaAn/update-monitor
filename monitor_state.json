@@ -93,8 +93,8 @@
     "2108887141015237060"
    ],
    "baselined": true,
-   "last_checked_tick": 9418,
-   "last_checked_at": 1792209672.126261,
+   "last_checked_tick": 9419,
+   "last_checked_at": 1792209969.255325,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -263,8 +263,8 @@
     "2105920847429115915"
    ],
    "baselined": true,
-   "last_checked_tick": 9418,
-   "last_checked_at": 1792209672.126261,
+   "last_checked_tick": 9419,
+   "last_checked_at": 1792209969.255325,
    "fail_streak": 0
   },
   "site_ek": {
@@ -398,6 +398,6 @@
    }
   }
  },
- "tick": 9418,
+ "tick": 9419,
  "last_sweep_hour": "2026-10-17T04"
 }
