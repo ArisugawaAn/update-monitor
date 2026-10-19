@@ -40,16 +40,16 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 10094,
-   "last_checked_at": 1792409455.399215,
-   "fail_streak": 798,
+   "last_checked_tick": 10098,
+   "last_checked_at": 1792410663.614128,
+   "fail_streak": 799,
    "alerts": {
     "checkpoint": false,
     "cookie:1/3·uid23867251614": true,
     "cookie:3/3·uid62174512101": true,
     "cookie:1/3·uid9321283731": true
    },
-   "cooldown_until_tick": 10097
+   "cooldown_until_tick": 10101
   },
   "x": {
    "seen": [
@@ -97,8 +97,8 @@
     "2111815340133065147"
    ],
    "baselined": true,
-   "last_checked_tick": 10097,
-   "last_checked_at": 1792410352.784099,
+   "last_checked_tick": 10098,
+   "last_checked_at": 1792410663.614128,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -130,8 +130,8 @@
     "imUTWunRgbA"
    ],
    "baselined": true,
-   "last_checked_tick": 10096,
-   "last_checked_at": 1792410052.465016,
+   "last_checked_tick": 10098,
+   "last_checked_at": 1792410663.614128,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -154,8 +154,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 10096,
-   "last_checked_at": 1792410052.465016,
+   "last_checked_tick": 10098,
+   "last_checked_at": 1792410663.614128,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -179,9 +179,9 @@
     "count-12"
    ],
    "baselined": true,
-   "last_checked_tick": 10096,
-   "last_checked_at": 1792410052.465016,
-   "fail_streak": 0
+   "last_checked_tick": 10098,
+   "last_checked_at": 1792410663.614128,
+   "fail_streak": 1
   },
   "x_paonews_info": {
    "seen": [
@@ -271,8 +271,8 @@
     "2105920847429115915"
    ],
    "baselined": true,
-   "last_checked_tick": 10097,
-   "last_checked_at": 1792410352.784099,
+   "last_checked_tick": 10098,
+   "last_checked_at": 1792410663.614128,
    "fail_streak": 0
   },
   "site_ek": {
@@ -406,6 +406,6 @@
    }
   }
  },
- "tick": 10097,
+ "tick": 10098,
  "last_sweep_hour": "2026-10-19T11"
 }
