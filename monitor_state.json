@@ -30,8 +30,8 @@
     "8c79e1b819305edd"
    ],
    "baselined": true,
-   "last_checked_tick": 10289,
-   "last_checked_at": 1792467051.272878,
+   "last_checked_tick": 10292,
+   "last_checked_at": 1792467957.170794,
    "fail_streak": 0
   },
   "ig_story": {
@@ -97,8 +97,8 @@
     "2111815340133065147"
    ],
    "baselined": true,
-   "last_checked_tick": 10291,
-   "last_checked_at": 1792467655.827266,
+   "last_checked_tick": 10292,
+   "last_checked_at": 1792467957.170794,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -203,8 +203,8 @@
     "2106218675883888981"
    ],
    "baselined": true,
-   "last_checked_tick": 10289,
-   "last_checked_at": 1792467051.272878,
+   "last_checked_tick": 10292,
+   "last_checked_at": 1792467957.170794,
    "fail_streak": 0
   },
   "x_hmnews_info": {
@@ -235,8 +235,8 @@
     "2104923527778636046"
    ],
    "baselined": true,
-   "last_checked_tick": 10289,
-   "last_checked_at": 1792467051.272878,
+   "last_checked_tick": 10292,
+   "last_checked_at": 1792467957.170794,
    "fail_streak": 0
   },
   "x_elekashi_ofcl": {
@@ -271,8 +271,8 @@
     "2105920847429115915"
    ],
    "baselined": true,
-   "last_checked_tick": 10291,
-   "last_checked_at": 1792467655.827266,
+   "last_checked_tick": 10292,
+   "last_checked_at": 1792467957.170794,
    "fail_streak": 0
   },
   "site_ek": {
@@ -303,8 +303,8 @@
     "91ee995979bebb7b"
    ],
    "baselined": true,
-   "last_checked_tick": 10289,
-   "last_checked_at": 1792467051.272878,
+   "last_checked_tick": 10292,
+   "last_checked_at": 1792467957.170794,
    "fail_streak": 0
   },
   "site_ekfc": {
@@ -339,8 +339,8 @@
     "424"
    ],
    "baselined": true,
-   "last_checked_tick": 10289,
-   "last_checked_at": 1792467051.272878,
+   "last_checked_tick": 10292,
+   "last_checked_at": 1792467957.170794,
    "fail_streak": 0
   },
   "site_elephantsinc": {
@@ -352,8 +352,8 @@
     "news202609"
    ],
    "baselined": true,
-   "last_checked_tick": 10289,
-   "last_checked_at": 1792467051.272878,
+   "last_checked_tick": 10292,
+   "last_checked_at": 1792467957.170794,
    "fail_streak": 0
   },
   "ig_post": {
@@ -397,15 +397,15 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 10280,
-   "last_checked_at": 1792464353.360985,
-   "fail_streak": 905,
-   "cooldown_until_tick": 10283,
+   "last_checked_tick": 10292,
+   "last_checked_at": 1792467957.170794,
+   "fail_streak": 906,
+   "cooldown_until_tick": 10295,
    "alerts": {
     "ratelimit": true
    }
   }
  },
- "tick": 10291,
+ "tick": 10292,
  "last_sweep_hour": "2026-10-20T03"
 }
