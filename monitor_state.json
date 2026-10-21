@@ -30,9 +30,9 @@
     "8c79e1b819305edd"
    ],
    "baselined": true,
-   "last_checked_tick": 10817,
-   "last_checked_at": 1792622754.070932,
-   "fail_streak": 39
+   "last_checked_tick": 10820,
+   "last_checked_at": 1792623654.317327,
+   "fail_streak": 40
   },
   "ig_story": {
    "seen": [
@@ -40,16 +40,16 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 10816,
-   "last_checked_at": 1792622452.061585,
-   "fail_streak": 933,
+   "last_checked_tick": 10820,
+   "last_checked_at": 1792623654.317327,
+   "fail_streak": 934,
    "alerts": {
     "checkpoint": false,
     "cookie:1/3·uid23867251614": true,
     "cookie:3/3·uid62174512101": true,
     "cookie:1/3·uid9321283731": true
    },
-   "cooldown_until_tick": 10819
+   "cooldown_until_tick": 10823
   },
   "x": {
    "seen": [
@@ -97,8 +97,8 @@
     "2111815340133065147"
    ],
    "baselined": true,
-   "last_checked_tick": 10819,
-   "last_checked_at": 1792623352.924531,
+   "last_checked_tick": 10820,
+   "last_checked_at": 1792623654.317327,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -130,8 +130,8 @@
     "imUTWunRgbA"
    ],
    "baselined": true,
-   "last_checked_tick": 10818,
-   "last_checked_at": 1792623055.118712,
+   "last_checked_tick": 10820,
+   "last_checked_at": 1792623654.317327,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -154,8 +154,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 10818,
-   "last_checked_at": 1792623055.118712,
+   "last_checked_tick": 10820,
+   "last_checked_at": 1792623654.317327,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -179,8 +179,8 @@
     "count-12"
    ],
    "baselined": true,
-   "last_checked_tick": 10818,
-   "last_checked_at": 1792623055.118712,
+   "last_checked_tick": 10820,
+   "last_checked_at": 1792623654.317327,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -203,8 +203,8 @@
     "2106218675883888981"
    ],
    "baselined": true,
-   "last_checked_tick": 10817,
-   "last_checked_at": 1792622754.070932,
+   "last_checked_tick": 10820,
+   "last_checked_at": 1792623654.317327,
    "fail_streak": 0
   },
   "x_hmnews_info": {
@@ -235,8 +235,8 @@
     "2104923527778636046"
    ],
    "baselined": true,
-   "last_checked_tick": 10817,
-   "last_checked_at": 1792622754.070932,
+   "last_checked_tick": 10820,
+   "last_checked_at": 1792623654.317327,
    "fail_streak": 0
   },
   "x_elekashi_ofcl": {
@@ -271,8 +271,8 @@
     "2105920847429115915"
    ],
    "baselined": true,
-   "last_checked_tick": 10819,
-   "last_checked_at": 1792623352.924531,
+   "last_checked_tick": 10820,
+   "last_checked_at": 1792623654.317327,
    "fail_streak": 0
   },
   "site_ek": {
@@ -303,9 +303,9 @@
     "91ee995979bebb7b"
    ],
    "baselined": true,
-   "last_checked_tick": 10817,
-   "last_checked_at": 1792622754.070932,
-   "fail_streak": 39
+   "last_checked_tick": 10820,
+   "last_checked_at": 1792623654.317327,
+   "fail_streak": 40
   },
   "site_ekfc": {
    "seen": [
@@ -339,9 +339,9 @@
     "424"
    ],
    "baselined": true,
-   "last_checked_tick": 10817,
-   "last_checked_at": 1792622754.070932,
-   "fail_streak": 39
+   "last_checked_tick": 10820,
+   "last_checked_at": 1792623654.317327,
+   "fail_streak": 40
   },
   "site_elephantsinc": {
    "seen": [
@@ -352,8 +352,8 @@
     "news202609"
    ],
    "baselined": true,
-   "last_checked_tick": 10817,
-   "last_checked_at": 1792622754.070932,
+   "last_checked_tick": 10820,
+   "last_checked_at": 1792623654.317327,
    "fail_streak": 0
   },
   "ig_post": {
@@ -397,15 +397,15 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 10808,
-   "last_checked_at": 1792620060.18196,
-   "fail_streak": 951,
-   "cooldown_until_tick": 10811,
+   "last_checked_tick": 10820,
+   "last_checked_at": 1792623654.317327,
+   "fail_streak": 952,
+   "cooldown_until_tick": 10823,
    "alerts": {
     "ratelimit": true
    }
   }
  },
- "tick": 10819,
- "last_sweep_hour": "2026-10-21T22"
+ "tick": 10820,
+ "last_sweep_hour": "2026-10-21T23"
 }
