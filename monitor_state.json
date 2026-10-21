@@ -30,9 +30,9 @@
     "8c79e1b819305edd"
    ],
    "baselined": true,
-   "last_checked_tick": 10747,
-   "last_checked_at": 1792602032.14828,
-   "fail_streak": 15
+   "last_checked_tick": 10750,
+   "last_checked_at": 1792602928.254913,
+   "fail_streak": 16
   },
   "ig_story": {
    "seen": [
@@ -97,8 +97,8 @@
     "2111815340133065147"
    ],
    "baselined": true,
-   "last_checked_tick": 10749,
-   "last_checked_at": 1792602628.909162,
+   "last_checked_tick": 10750,
+   "last_checked_at": 1792602928.254913,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -203,8 +203,8 @@
     "2106218675883888981"
    ],
    "baselined": true,
-   "last_checked_tick": 10747,
-   "last_checked_at": 1792602032.14828,
+   "last_checked_tick": 10750,
+   "last_checked_at": 1792602928.254913,
    "fail_streak": 0
   },
   "x_hmnews_info": {
@@ -235,9 +235,9 @@
     "2104923527778636046"
    ],
    "baselined": true,
-   "last_checked_tick": 10747,
-   "last_checked_at": 1792602032.14828,
-   "fail_streak": 0
+   "last_checked_tick": 10750,
+   "last_checked_at": 1792602928.254913,
+   "fail_streak": 1
   },
   "x_elekashi_ofcl": {
    "seen": [
@@ -271,9 +271,9 @@
     "2105920847429115915"
    ],
    "baselined": true,
-   "last_checked_tick": 10749,
-   "last_checked_at": 1792602628.909162,
-   "fail_streak": 0
+   "last_checked_tick": 10750,
+   "last_checked_at": 1792602928.254913,
+   "fail_streak": 1
   },
   "site_ek": {
    "seen": [
@@ -303,9 +303,9 @@
     "91ee995979bebb7b"
    ],
    "baselined": true,
-   "last_checked_tick": 10747,
-   "last_checked_at": 1792602032.14828,
-   "fail_streak": 15
+   "last_checked_tick": 10750,
+   "last_checked_at": 1792602928.254913,
+   "fail_streak": 16
   },
   "site_ekfc": {
    "seen": [
@@ -339,9 +339,9 @@
     "424"
    ],
    "baselined": true,
-   "last_checked_tick": 10747,
-   "last_checked_at": 1792602032.14828,
-   "fail_streak": 15
+   "last_checked_tick": 10750,
+   "last_checked_at": 1792602928.254913,
+   "fail_streak": 16
   },
   "site_elephantsinc": {
    "seen": [
@@ -352,8 +352,8 @@
     "news202609"
    ],
    "baselined": true,
-   "last_checked_tick": 10747,
-   "last_checked_at": 1792602032.14828,
+   "last_checked_tick": 10750,
+   "last_checked_at": 1792602928.254913,
    "fail_streak": 0
   },
   "ig_post": {
@@ -406,6 +406,6 @@
    }
   }
  },
- "tick": 10749,
+ "tick": 10750,
  "last_sweep_hour": "2026-10-21T17"
 }
