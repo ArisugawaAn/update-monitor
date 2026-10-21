@@ -30,9 +30,9 @@
     "8c79e1b819305edd"
    ],
    "baselined": true,
-   "last_checked_tick": 10711,
-   "last_checked_at": 1792591228.758571,
-   "fail_streak": 3
+   "last_checked_tick": 10714,
+   "last_checked_at": 1792592129.210723,
+   "fail_streak": 4
   },
   "ig_story": {
    "seen": [
@@ -97,8 +97,8 @@
     "2111815340133065147"
    ],
    "baselined": true,
-   "last_checked_tick": 10713,
-   "last_checked_at": 1792591826.982852,
+   "last_checked_tick": 10714,
+   "last_checked_at": 1792592129.210723,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -203,9 +203,9 @@
     "2106218675883888981"
    ],
    "baselined": true,
-   "last_checked_tick": 10711,
-   "last_checked_at": 1792591228.758571,
-   "fail_streak": 0
+   "last_checked_tick": 10714,
+   "last_checked_at": 1792592129.210723,
+   "fail_streak": 1
   },
   "x_hmnews_info": {
    "seen": [
@@ -235,9 +235,9 @@
     "2104923527778636046"
    ],
    "baselined": true,
-   "last_checked_tick": 10711,
-   "last_checked_at": 1792591228.758571,
-   "fail_streak": 0
+   "last_checked_tick": 10714,
+   "last_checked_at": 1792592129.210723,
+   "fail_streak": 1
   },
   "x_elekashi_ofcl": {
    "seen": [
@@ -271,8 +271,8 @@
     "2105920847429115915"
    ],
    "baselined": true,
-   "last_checked_tick": 10713,
-   "last_checked_at": 1792591826.982852,
+   "last_checked_tick": 10714,
+   "last_checked_at": 1792592129.210723,
    "fail_streak": 0
   },
   "site_ek": {
@@ -303,9 +303,9 @@
     "91ee995979bebb7b"
    ],
    "baselined": true,
-   "last_checked_tick": 10711,
-   "last_checked_at": 1792591228.758571,
-   "fail_streak": 3
+   "last_checked_tick": 10714,
+   "last_checked_at": 1792592129.210723,
+   "fail_streak": 4
   },
   "site_ekfc": {
    "seen": [
@@ -339,9 +339,9 @@
     "424"
    ],
    "baselined": true,
-   "last_checked_tick": 10711,
-   "last_checked_at": 1792591228.758571,
-   "fail_streak": 3
+   "last_checked_tick": 10714,
+   "last_checked_at": 1792592129.210723,
+   "fail_streak": 4
   },
   "site_elephantsinc": {
    "seen": [
@@ -352,8 +352,8 @@
     "news202609"
    ],
    "baselined": true,
-   "last_checked_tick": 10711,
-   "last_checked_at": 1792591228.758571,
+   "last_checked_tick": 10714,
+   "last_checked_at": 1792592129.210723,
    "fail_streak": 0
   },
   "ig_post": {
@@ -406,6 +406,6 @@
    }
   }
  },
- "tick": 10713,
+ "tick": 10714,
  "last_sweep_hour": "2026-10-21T14"
 }
