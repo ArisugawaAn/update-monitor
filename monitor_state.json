@@ -83,7 +83,8 @@
     "2108887141015237060",
     "2111019377843921391",
     "2111815340133065147",
-    "2113153296525558099"
+    "2113153296525558099",
+    "2113556179263869050"
    ],
    "notified": [
     "2100887565540974636",
@@ -96,11 +97,12 @@
     "2108887141015237060",
     "2111019377843921391",
     "2111815340133065147",
-    "2113153296525558099"
+    "2113153296525558099",
+    "2113556179263869050"
    ],
    "baselined": true,
-   "last_checked_tick": 11331,
-   "last_checked_at": 1792773963.939794,
+   "last_checked_tick": 11332,
+   "last_checked_at": 1792774551.686339,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -132,8 +134,8 @@
     "imUTWunRgbA"
    ],
    "baselined": true,
-   "last_checked_tick": 11330,
-   "last_checked_at": 1792773659.31483,
+   "last_checked_tick": 11332,
+   "last_checked_at": 1792774551.686339,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -156,8 +158,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 11330,
-   "last_checked_at": 1792773659.31483,
+   "last_checked_tick": 11332,
+   "last_checked_at": 1792774551.686339,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -181,8 +183,8 @@
     "count-12"
    ],
    "baselined": true,
-   "last_checked_tick": 11330,
-   "last_checked_at": 1792773659.31483,
+   "last_checked_tick": 11332,
+   "last_checked_at": 1792774551.686339,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -275,8 +277,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 11331,
-   "last_checked_at": 1792773963.939794,
+   "last_checked_tick": 11332,
+   "last_checked_at": 1792774551.686339,
    "fail_streak": 0
   },
   "site_ek": {
@@ -401,15 +403,15 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 11320,
-   "last_checked_at": 1792770659.662827,
-   "fail_streak": 995,
-   "cooldown_until_tick": 11323,
+   "last_checked_tick": 11332,
+   "last_checked_at": 1792774551.686339,
+   "fail_streak": 996,
+   "cooldown_until_tick": 11335,
    "alerts": {
     "ratelimit": true
    }
   }
  },
- "tick": 11331,
+ "tick": 11332,
  "last_sweep_hour": "2026-10-23T16"
 }
