@@ -30,9 +30,9 @@
     "8c79e1b819305edd"
    ],
    "baselined": true,
-   "last_checked_tick": 11501,
-   "last_checked_at": 1792824645.47965,
-   "fail_streak": 276
+   "last_checked_tick": 11503,
+   "last_checked_at": 1792825256.2584,
+   "fail_streak": 277
   },
   "ig_story": {
    "seen": [
@@ -40,16 +40,16 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 11499,
-   "last_checked_at": 1792824047.74333,
-   "fail_streak": 1073,
+   "last_checked_tick": 11503,
+   "last_checked_at": 1792825256.2584,
+   "fail_streak": 1074,
    "alerts": {
     "checkpoint": false,
     "cookie:1/3·uid23867251614": true,
     "cookie:3/3·uid62174512101": true,
     "cookie:1/3·uid9321283731": true
    },
-   "cooldown_until_tick": 11502
+   "cooldown_until_tick": 11506
   },
   "x": {
    "seen": [
@@ -101,8 +101,8 @@
     "2113556179263869050"
    ],
    "baselined": true,
-   "last_checked_tick": 11502,
-   "last_checked_at": 1792824946.051854,
+   "last_checked_tick": 11503,
+   "last_checked_at": 1792825256.2584,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -134,8 +134,8 @@
     "imUTWunRgbA"
    ],
    "baselined": true,
-   "last_checked_tick": 11502,
-   "last_checked_at": 1792824946.051854,
+   "last_checked_tick": 11503,
+   "last_checked_at": 1792825256.2584,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -158,8 +158,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 11502,
-   "last_checked_at": 1792824946.051854,
+   "last_checked_tick": 11503,
+   "last_checked_at": 1792825256.2584,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -183,8 +183,8 @@
     "count-12"
    ],
    "baselined": true,
-   "last_checked_tick": 11502,
-   "last_checked_at": 1792824946.051854,
+   "last_checked_tick": 11503,
+   "last_checked_at": 1792825256.2584,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -207,8 +207,8 @@
     "2106218675883888981"
    ],
    "baselined": true,
-   "last_checked_tick": 11501,
-   "last_checked_at": 1792824645.47965,
+   "last_checked_tick": 11503,
+   "last_checked_at": 1792825256.2584,
    "fail_streak": 0
   },
   "x_hmnews_info": {
@@ -239,8 +239,8 @@
     "2104923527778636046"
    ],
    "baselined": true,
-   "last_checked_tick": 11501,
-   "last_checked_at": 1792824645.47965,
+   "last_checked_tick": 11503,
+   "last_checked_at": 1792825256.2584,
    "fail_streak": 0
   },
   "x_elekashi_ofcl": {
@@ -277,8 +277,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 11502,
-   "last_checked_at": 1792824946.051854,
+   "last_checked_tick": 11503,
+   "last_checked_at": 1792825256.2584,
    "fail_streak": 0
   },
   "site_ek": {
@@ -309,9 +309,9 @@
     "91ee995979bebb7b"
    ],
    "baselined": true,
-   "last_checked_tick": 11501,
-   "last_checked_at": 1792824645.47965,
-   "fail_streak": 276
+   "last_checked_tick": 11503,
+   "last_checked_at": 1792825256.2584,
+   "fail_streak": 277
   },
   "site_ekfc": {
    "seen": [
@@ -345,9 +345,9 @@
     "424"
    ],
    "baselined": true,
-   "last_checked_tick": 11501,
-   "last_checked_at": 1792824645.47965,
-   "fail_streak": 276
+   "last_checked_tick": 11503,
+   "last_checked_at": 1792825256.2584,
+   "fail_streak": 277
   },
   "site_elephantsinc": {
    "seen": [
@@ -358,8 +358,8 @@
     "news202609"
    ],
    "baselined": true,
-   "last_checked_tick": 11501,
-   "last_checked_at": 1792824645.47965,
+   "last_checked_tick": 11503,
+   "last_checked_at": 1792825256.2584,
    "fail_streak": 0
   },
   "ig_post": {
@@ -452,17 +452,17 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 11500,
-   "last_checked_at": 1792824345.343443,
+   "last_checked_tick": 11503,
+   "last_checked_at": 1792825256.2584,
    "fail_streak": 0
   }
  },
- "tick": 11502,
- "last_sweep_hour": "2026-10-24T06",
+ "tick": 11503,
+ "last_sweep_hour": "2026-10-24T07",
  "ig_anon_proxies": [
   {
    "proxy": "82.152.138.127:999",
-   "ok_at": 1792824350.9048555,
+   "ok_at": 1792825260.811892,
    "fails": 0
   }
  ]
