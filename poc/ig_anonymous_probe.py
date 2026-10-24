@@ -415,6 +415,9 @@ def probe_free_pool() -> list:
         random.shuffle(uniq)
         return uniq[:_POOL_CAP]
 
+    pool = fetch_pool()
+    print(f"  池子: {len(pool)} 个候选，{_POOL_WORKERS} 并发，每个只碰一次", flush=True)
+    ok_code: dict = {}   # 可用代理 → 首条短码（供同代理详情查询闭环）
     def check(proxy: str):
         try:
             r = requests.get(f"https://www.instagram.com/{USERNAME.lower()}/",
@@ -439,18 +442,17 @@ def probe_free_pool() -> list:
                     for data in _embedded_query_data(json.loads(script.group(1))):
                         u = data.get("xig_user_by_username") or {}
                         if str(u.get("pk")) == USERID:
-                            n = len(((u.get("polaris_ordered_timeline_connection") or {})
-                                     .get("edges")) or [])
-                            if n:
-                                return proxy, "ok", n
+                            edges = ((u.get("polaris_ordered_timeline_connection") or {})
+                                     .get("edges")) or []
+                            if edges:
+                                ok_code[proxy] = edges[0].get("node", {}).get("code")
+                                return proxy, "ok", len(edges)
                 except json.decoder.JSONDecodeError:
                     pass
         except Exception:
             pass
         return proxy, "no_data", len(r.text)
 
-    pool = fetch_pool()
-    print(f"  池子: {len(pool)} 个候选，{_POOL_WORKERS} 并发，每个只碰一次", flush=True)
     results = []
     with ThreadPoolExecutor(max_workers=_POOL_WORKERS) as ex:
         for res in ex.map(check, pool):
@@ -468,6 +470,30 @@ def probe_free_pool() -> list:
                   f"hosting={info.get('hosting')} mobile={info.get('mobile')}", flush=True)
         except Exception:
             print(f"  WORKING {p} edges={edges}", flush=True)
+
+    # 闭环验证（= 生产流程原型）：经同一可用代理做单帖详情查询（拿 caption/时间）
+    for p, _ in oks[:2]:
+        code = ok_code.get(p)
+        if not code:
+            continue
+        try:
+            rr = requests.post("https://www.instagram.com/graphql/query",
+                               data={"doc_id": "27128499623469141",
+                                     "variables": json.dumps({
+                                         "shortcode": code,
+                                         "__relay_internal__pv__PolarisAIGMMediaWebLabelEnabledrelayprovider": False})},
+                               headers={"Content-Type": "application/x-www-form-urlencoded",
+                                        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
+                                                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                                      "Chrome/142.0.0.0 Safari/537.36",
+                                        "X-IG-App-ID": "936619743392459"},
+                               proxies={"http": f"http://{p}", "https": f"http://{p}"},
+                               timeout=(5, 12))
+            ok = "xdt_api__v1__media__shortcode__web_info" in rr.text
+            print(f"  DETAIL via {p} shortcode={code}: HTTP {rr.status_code} data={ok}",
+                  flush=True)
+        except Exception as e:
+            print(f"  DETAIL via {p}: {type(e).__name__}: {str(e)[:80]}", flush=True)
     return [p for p, _ in oks]
 
 
