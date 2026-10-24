@@ -471,24 +471,35 @@ def probe_free_pool() -> list:
         except Exception:
             print(f"  WORKING {p} edges={edges}", flush=True)
 
-    # 闭环验证（= 生产流程原型）：经同一可用代理做单帖详情查询（拿 caption/时间）
+    # 闭环验证（= 生产流程原型）：经同一可用代理做单帖详情查询（拿 caption/时间）。
+    # 403 修正：复用 Session——先触一次页面拿 csrftoken 等 cookie，再带 X-CSRFToken 打 graphql。
     for p, _ in oks[:2]:
         code = ok_code.get(p)
         if not code:
             continue
         try:
-            rr = requests.post("https://www.instagram.com/graphql/query",
-                               data={"doc_id": "27128499623469141",
-                                     "variables": json.dumps({
-                                         "shortcode": code,
-                                         "__relay_internal__pv__PolarisAIGMMediaWebLabelEnabledrelayprovider": False})},
-                               headers={"Content-Type": "application/x-www-form-urlencoded",
-                                        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
-                                                      "AppleWebKit/537.36 (KHTML, like Gecko) "
-                                                      "Chrome/142.0.0.0 Safari/537.36",
-                                        "X-IG-App-ID": "936619743392459"},
-                               proxies={"http": f"http://{p}", "https": f"http://{p}"},
-                               timeout=(5, 12))
+            s = requests.Session()
+            s.proxies = {"http": f"http://{p}", "https": f"http://{p}"}
+            s.headers.update({"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
+                                            "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                            "Chrome/142.0.0.0 Safari/537.36",
+                              "X-IG-App-ID": "936619743392459",
+                              "X-Requested-With": "XMLHttpRequest",
+                              "Referer": f"https://www.instagram.com/{USERNAME.lower()}/",
+                              "Accept": "*/*"})
+            s.get(f"https://www.instagram.com/{USERNAME.lower()}/",
+                  headers={"Accept": "text/html", "Sec-Fetch-Dest": "document",
+                           "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "none"},
+                  timeout=(5, 10), allow_redirects=False)
+            csrf = s.cookies.get("csrftoken")
+            if csrf:
+                s.headers["X-CSRFToken"] = csrf
+            rr = s.post("https://www.instagram.com/graphql/query",
+                        data={"doc_id": "27128499623469141",
+                              "variables": json.dumps({
+                                  "shortcode": code,
+                                  "__relay_internal__pv__PolarisAIGMMediaWebLabelEnabledrelayprovider": False})},
+                        timeout=(5, 12))
             ok = "xdt_api__v1__media__shortcode__web_info" in rr.text
             print(f"  DETAIL via {p} shortcode={code}: HTTP {rr.status_code} data={ok}",
                   flush=True)
