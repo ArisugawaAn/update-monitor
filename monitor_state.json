@@ -101,8 +101,8 @@
     "2113556179263869050"
    ],
    "baselined": true,
-   "last_checked_tick": 11512,
-   "last_checked_at": 1792827952.099465,
+   "last_checked_tick": 11513,
+   "last_checked_at": 1792828248.009638,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -134,8 +134,8 @@
     "imUTWunRgbA"
    ],
    "baselined": true,
-   "last_checked_tick": 11511,
-   "last_checked_at": 1792827646.877318,
+   "last_checked_tick": 11513,
+   "last_checked_at": 1792828248.009638,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -158,8 +158,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 11511,
-   "last_checked_at": 1792827646.877318,
+   "last_checked_tick": 11513,
+   "last_checked_at": 1792828248.009638,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -183,8 +183,8 @@
     "count-12"
    ],
    "baselined": true,
-   "last_checked_tick": 11511,
-   "last_checked_at": 1792827646.877318,
+   "last_checked_tick": 11513,
+   "last_checked_at": 1792828248.009638,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -277,8 +277,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 11512,
-   "last_checked_at": 1792827952.099465,
+   "last_checked_tick": 11513,
+   "last_checked_at": 1792828248.009638,
    "fail_streak": 0
   },
   "site_ek": {
@@ -455,17 +455,32 @@
     "story-1792823116"
    ],
    "baselined": true,
-   "last_checked_tick": 11511,
-   "last_checked_at": 1792827646.877318,
+   "last_checked_tick": 11513,
+   "last_checked_at": 1792828248.009638,
    "fail_streak": 0
   }
  },
- "tick": 11512,
+ "tick": 11513,
  "last_sweep_hour": "2026-10-24T07",
  "ig_anon_proxies": [
   {
    "proxy": "82.152.138.127:999",
    "ok_at": 1792827651.6008155,
+   "fails": 1
+  },
+  {
+   "proxy": "114.141.54.2:8080",
+   "ok_at": 1792828258.416757,
+   "fails": 0
+  },
+  {
+   "proxy": "186.33.52.250:999",
+   "ok_at": 1792828258.4167602,
+   "fails": 0
+  },
+  {
+   "proxy": "161.18.226.135:8080",
+   "ok_at": 1792828262.3005228,
    "fails": 0
   }
  ],
