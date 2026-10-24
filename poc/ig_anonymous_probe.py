@@ -518,6 +518,52 @@ def probe_free_pool() -> list:
 
     # 闭环验证（= 生产流程原型）：经同一可用代理做单帖详情查询（拿 caption/时间）。
     # 403 修正：复用 Session——先触一次页面拿 csrftoken 等 cookie，再带 X-CSRFToken 打 graphql。
+    # 内容演示：经第一个可用代理把三账号的最新帖子完整打出来（= 生产数据形态）。
+    if oks:
+        p0 = oks[0][0]
+        print(f"  内容演示（经 {p0}）:", flush=True)
+        for name, uid in PROBE_ACCOUNTS:
+            try:
+                r = requests.get(f"https://www.instagram.com/{name.lower()}/",
+                                 headers={"Accept": "text/html",
+                                          "Sec-Fetch-Dest": "document",
+                                          "Sec-Fetch-Mode": "navigate",
+                                          "Sec-Fetch-Site": "none",
+                                          "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
+                                                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                                        "Chrome/142.0.0.0 Safari/537.36"},
+                                 proxies={"http": f"http://{p0}", "https": f"http://{p0}"},
+                                 timeout=(5, 12), allow_redirects=False)
+                if r.status_code != 200:
+                    print(f"    @{name}: HTTP {r.status_code}", flush=True)
+                    continue
+                user: dict = {}
+                for script in _re.finditer(
+                        r'<script type="application/json"[^>]*>(.*?)</script>',
+                        r.text, _re.DOTALL):
+                    try:
+                        for data in _embedded_query_data(json.loads(script.group(1))):
+                            u = data.get("xig_user_by_username") or {}
+                            if u.get("pk"):
+                                user.update(u)
+                    except json.decoder.JSONDecodeError:
+                        pass
+                tl = user.pop("polaris_ordered_timeline_connection", None) or {}
+                edges = tl.get("edges") or []
+                print(f"    @{name}: pk={user.get('pk')} edges={len(edges)}", flush=True)
+                for idx, e in enumerate(edges, 1):
+                    node = e.get("node") or {}
+                    code = node.get("code")
+                    pt = node.get("product_type") or f"type{node.get('media_type')}"
+                    cap = node.get("caption")
+                    if isinstance(cap, dict):
+                        cap = cap.get("text") or ""
+                    path = "reel" if pt == "clips" else "p"
+                    print(f"      {idx:>2}. [{pt}] {code}  "
+                          f"https://www.instagram.com/{path}/{code}/  "
+                          f"{(cap or '')[:48]!r}", flush=True)
+            except Exception as e:
+                print(f"    @{name}: {type(e).__name__}: {str(e)[:70]}", flush=True)
     for p, _ in oks[:2]:
         code = ok_code.get(p)
         if not code:
