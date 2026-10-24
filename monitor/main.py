@@ -19,10 +19,10 @@ def _now_ts() -> float:
 
 
 def build_sources() -> list:
-    from monitor.sources import ig_post, ig_story, tiktok, websites, x_twitter, youtube
+    from monitor.sources import ig_anon, ig_story, tiktok, websites, x_twitter, youtube
     return [
         ig_story.source(),
-        ig_post.source(),
+        ig_anon.source(),  # 免账号 post/reel 通道（2026-10 起，替代 ig_post；ig_post 模块保留为兜底）
         *[x_twitter.source(user) for user in config.X_USERS],  # 主号在前，每轮查
         *[youtube.source(name, cid) for name, cid in config.YOUTUBE_CHANNELS],
         *[tiktok.source(handle, sec) for handle, sec in config.TIKTOK_ACCOUNTS],
@@ -83,6 +83,9 @@ def run_once(sources: list, state: dict, counters: dict, disabled: set,
         st.set_last_checked_tick(state, src.key, cur_tick)
         st.set_last_checked_at(state, src.key, now_ts)
         st.save_state(config.STATE_FILE, state)
+        set_state = getattr(src, "set_state", None)
+        if callable(set_state):  # 源可持有 state 引用做自己的持久化（如 ig_anon 的代理缓存）
+            set_state(state)
         try:
             updates = src.check()
         except CheckpointError as e:
