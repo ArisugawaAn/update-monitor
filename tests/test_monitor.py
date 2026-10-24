@@ -1119,10 +1119,30 @@ def test_ig_anon_emit_builds_updates():
                for u in ups)
 
 
+def test_ig_anon_story_presence_detection():
+    """latest_reel_media（@nba 实测）：非零 = story 在场 → 发 content_type=story 的
+    Update（external_id=时间戳，同批次去重）；0 = 无 story → 不发。"""
+    from monitor.sources import ig_anon
+    user, edges = ig_anon._parse_page(_IG_ANON_HTML, 10584438821)
+    user["latest_reel_media"] = "1792812141"
+    s = SimpleNamespace(cookies=SimpleNamespace(get=lambda *a, **k: None))
+    ups = ig_anon._emit("miyamoto_doppo", 10584438821, (user, edges), s)
+    presence = [u for u in ups if u.content_type == "story"]
+    assert len(presence) == 1
+    p = presence[0]
+    assert p.external_id == "story-1792812141"
+    assert p.url == "https://www.instagram.com/stories/miyamoto_doppo/"
+    assert p.published_at is not None and p.published_at.year == 2026
+
+    user["latest_reel_media"] = "0"
+    ups0 = ig_anon._emit("miyamoto_doppo", 10584438821, (user, edges), s)
+    assert all(u.content_type != "story" for u in ups0)
+
+
 def test_ig_anon_cadence_quiet_and_prefix():
     from monitor import config
-    assert config.check_interval_ticks("ig_anon") == 4   # ≈20 分钟
-    assert config.check_interval_minutes("ig_anon") == 20
+    assert config.check_interval_ticks("ig_anon") == 2   # ≈10 分钟
+    assert config.check_interval_minutes("ig_anon") == 10
     assert config.quiet_hours_jst("ig_anon") == (2, 7)   # 夜间静默与 story 同款
     assert config.cooldown_ticks("ig_anon", "boom") == 0  # 匿名源无会话，不进冷却
     assert config.notify_prefix("ig_anon", "miyamoto_doppo") == "宮本浩次"

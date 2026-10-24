@@ -147,12 +147,12 @@ def notify_prefix(source_key: str, account_name: str = "") -> str:
 #   5 分钟源每轮查，10 分钟源每 2 轮查，15 分钟源每 3 轮查，30 分钟源每 6 轮查。
 CHECK_INTERVAL_MINUTES = {  # 保留：人类可读的期望 cadence（实际门控用下面的轮次）
     "ig_story": 10,
-    "ig_anon": 20,  # 免账号通道：零账号风险，可比 ig_post 时代（60 分钟）更勤
+    "ig_anon": 10,  # 免账号通道：20→10 分钟（2026-10-24：兼作 story 在场检测，零边际成本）
     "ig_post": 60,  # [兜底] 私有 API：60 分钟一查，降低被 IG 限流/封禁的风险
     "x": 5,
     "x_paonews_info": 15,
     "x_hmnews_info": 15,
-    "x_elekashi_ofcl": 5,  # エレカシ官方号：2026-10 起提到 5 分钟一次
+    "x_elekashi_ofcl": 15,
     "site_miyamoto": 15,
     "site_ek": 15,
     "site_ekfc": 15,
@@ -164,12 +164,12 @@ DEFAULT_CHECK_INTERVAL_MINUTES = 5  # 未知新源的兜底：保持最高频率
 
 CHECK_INTERVAL_TICKS = {  # 实际门控：每 N 轮查一次
     "ig_story": 2,  # ≈10 分钟（私有 API 会话：降频降低风控压力）
-    "ig_anon": 4,   # ≈20 分钟（免账号通道；单轮空手=池子无可用出口，由连续失败报警兜底）
+    "ig_anon": 2,   # ≈10 分钟（免账号通道；单轮空手=池子无可用出口，由连续失败报警兜底）
     "ig_post": 12,  # [兜底] ≈60 分钟；失败后由下面的 COOLDOWN_* 进一步降频
     "x": 1,  # 主号 @miyamoto_hiroji：每轮查，不受次要号影响
     "x_paonews_info": 3,  # 次要 X 号：每 3 轮（≈15 分钟）查
     "x_hmnews_info": 3,
-    "x_elekashi_ofcl": 1,  # エレカシ官方号：每轮查（2026-10 起 5 分钟一次）
+    "x_elekashi_ofcl": 3,
     "site_miyamoto": 3,
     "site_ek": 3,
     "site_ekfc": 3,
