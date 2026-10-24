@@ -30,9 +30,9 @@
     "8c79e1b819305edd"
    ],
    "baselined": true,
-   "last_checked_tick": 11692,
-   "last_checked_at": 1792881949.825641,
-   "fail_streak": 341
+   "last_checked_tick": 11695,
+   "last_checked_at": 1792882844.625385,
+   "fail_streak": 342
   },
   "ig_story": {
    "seen": [
@@ -101,8 +101,8 @@
     "2113556179263869050"
    ],
    "baselined": true,
-   "last_checked_tick": 11694,
-   "last_checked_at": 1792882545.957063,
+   "last_checked_tick": 11695,
+   "last_checked_at": 1792882844.625385,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -136,8 +136,8 @@
     "fqOAzNo2ZCk"
    ],
    "baselined": true,
-   "last_checked_tick": 11693,
-   "last_checked_at": 1792882244.807881,
+   "last_checked_tick": 11695,
+   "last_checked_at": 1792882844.625385,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -160,8 +160,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 11693,
-   "last_checked_at": 1792882244.807881,
+   "last_checked_tick": 11695,
+   "last_checked_at": 1792882844.625385,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -187,8 +187,8 @@
     "count-13"
    ],
    "baselined": true,
-   "last_checked_tick": 11693,
-   "last_checked_at": 1792882244.807881,
+   "last_checked_tick": 11695,
+   "last_checked_at": 1792882844.625385,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -211,8 +211,8 @@
     "2106218675883888981"
    ],
    "baselined": true,
-   "last_checked_tick": 11692,
-   "last_checked_at": 1792881949.825641,
+   "last_checked_tick": 11695,
+   "last_checked_at": 1792882844.625385,
    "fail_streak": 0
   },
   "x_hmnews_info": {
@@ -243,8 +243,8 @@
     "2104923527778636046"
    ],
    "baselined": true,
-   "last_checked_tick": 11692,
-   "last_checked_at": 1792881949.825641,
+   "last_checked_tick": 11695,
+   "last_checked_at": 1792882844.625385,
    "fail_streak": 0
   },
   "x_elekashi_ofcl": {
@@ -281,8 +281,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 11694,
-   "last_checked_at": 1792882545.957063,
+   "last_checked_tick": 11695,
+   "last_checked_at": 1792882844.625385,
    "fail_streak": 0
   },
   "site_ek": {
@@ -313,9 +313,9 @@
     "91ee995979bebb7b"
    ],
    "baselined": true,
-   "last_checked_tick": 11692,
-   "last_checked_at": 1792881949.825641,
-   "fail_streak": 341
+   "last_checked_tick": 11695,
+   "last_checked_at": 1792882844.625385,
+   "fail_streak": 342
   },
   "site_ekfc": {
    "seen": [
@@ -349,9 +349,9 @@
     "424"
    ],
    "baselined": true,
-   "last_checked_tick": 11692,
-   "last_checked_at": 1792881949.825641,
-   "fail_streak": 341
+   "last_checked_tick": 11695,
+   "last_checked_at": 1792882844.625385,
+   "fail_streak": 342
   },
   "site_elephantsinc": {
    "seen": [
@@ -362,8 +362,8 @@
     "news202609"
    ],
    "baselined": true,
-   "last_checked_tick": 11692,
-   "last_checked_at": 1792881949.825641,
+   "last_checked_tick": 11695,
+   "last_checked_at": 1792882844.625385,
    "fail_streak": 0
   },
   "ig_post": {
@@ -459,37 +459,47 @@
     "story-1792823116"
    ],
    "baselined": true,
-   "last_checked_tick": 11693,
-   "last_checked_at": 1792882244.807881,
+   "last_checked_tick": 11695,
+   "last_checked_at": 1792882844.625385,
    "fail_streak": 0
   }
  },
- "tick": 11694,
- "last_sweep_hour": "2026-10-24T22",
+ "tick": 11695,
+ "last_sweep_hour": "2026-10-24T23",
  "ig_anon_proxies": [
-  {
-   "proxy": "82.152.138.127:999",
-   "ok_at": 1792881654.6954432,
-   "fails": 2
-  },
   {
    "proxy": "45.232.210.177:999",
    "ok_at": 1792882315.8781967,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "45.190.86.19:999",
    "ok_at": 1792882285.0332081,
-   "fails": 1
+   "fails": 2
   },
   {
    "proxy": "1.20.101.35:8080",
    "ok_at": 1792882285.0332122,
-   "fails": 1
+   "fails": 2
   },
   {
    "proxy": "45.174.243.232:999",
    "ok_at": 1792882285.0332134,
+   "fails": 1
+  },
+  {
+   "proxy": "121.101.134.181:8080",
+   "ok_at": 1792882880.6189053,
+   "fails": 0
+  },
+  {
+   "proxy": "203.175.102.214:8080",
+   "ok_at": 1792882880.6189091,
+   "fails": 0
+  },
+  {
+   "proxy": "157.10.97.37:8080",
+   "ok_at": 1792882887.1416197,
    "fails": 0
   }
  ],
