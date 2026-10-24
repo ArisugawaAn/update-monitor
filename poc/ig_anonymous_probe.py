@@ -608,6 +608,99 @@ def probe_free_pool() -> list:
     return [p for p, _ in oks]
 
 
+def probe_story_pool() -> list:
+    """方法 I：story reels_media（带 cookie）经免费住宅出口 —— 管道机制验证。
+
+    背景：story 有两道墙。凭据墙（匿名任何出口都拿不到 story，实测确认）+
+    IP 墙（cookie 请求从 Azure 反复打 API → 会话被标记 → 封号，即本周连续
+    失败的根因）。方案 = cookie 请求改走住宅出口：http 代理对 https 目标
+    只是 CONNECT 哑管道，TLS 校验由 requests 端完成 —— 代理读不到也改不了
+    cookie，但 IG 看到的是住宅 IP。
+    流程（每出口只打一次 reels_media）：
+      [1] 直连对照（Actions 出口 + 现有 cookie）
+      [2] 免费池子猎住宅出口（匿名主页验证可用性）→ 同一 Session 加 cookie
+          再打 reels_media
+    cookie 失效时预期 401/login_required 或匿名空响应 —— **JSON 形态正确即
+    证明管道可用**；换新 cookie 后本探测直接给出 go/no-go。
+    """
+    import os
+    import sys
+
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    import requests
+
+    from monitor.sources import ig_anon
+
+    def add_cookie(s: requests.Session, cookie: str) -> None:
+        for part in cookie.replace("\n", ";").split(";"):
+            if "=" in part:
+                k, v = part.strip().split("=", 1)
+                if k and v:
+                    s.cookies.set(k.strip(), v.strip(), domain=".instagram.com")
+        csrf = s.cookies.get("csrftoken")
+        if csrf:
+            s.headers["X-CSRFToken"] = csrf
+
+    def reels_media(s: requests.Session, uid: str):
+        return s.get("https://www.instagram.com/api/v1/feed/reels_media/",
+                     params=[("user_ids", uid)], timeout=(5, 15))
+
+    cookie = os.environ.get("IG_COOKIE", "").strip()
+    if not cookie:
+        print("  IG_COOKIE 未设置 → 跳过", flush=True)
+        return ["skipped"]
+    first_cookie = cookie.replace("|||", "\n").split("\n")[0].strip()
+    uid0 = "10584438821"
+    results = []
+
+    print("  [1] 直连对照（Actions 出口 + 现有 IG_COOKIE 第一条）", flush=True)
+    try:
+        s = ig_anon._session(None)
+        add_cookie(s, first_cookie)
+        r = reels_media(s, uid0)
+        authed = "reels_media" in r.text
+        print(f"      HTTP {r.status_code} authed={authed} body={r.text[:120]!r}", flush=True)
+        results.append(f"direct:{r.status_code}:{'authed' if authed else 'empty'}")
+    except Exception as e:
+        print(f"      直连失败: {type(e).__name__}: {str(e)[:90]}", flush=True)
+        results.append("direct:err")
+
+    print("  [2] 免费池子猎住宅出口 → 经代理 reels_media", flush=True)
+    pool = ig_anon._fetch_pool()
+    print(f"      池子 {len(pool)} 候选（验证即取数，找到即停）", flush=True)
+    winner = None
+    ex = ThreadPoolExecutor(max_workers=40)
+    try:
+        futs = [ex.submit(ig_anon._validate_proxy, p, int(uid0)) for p in pool]
+        for fut in as_completed(futs):
+            proxy, s, _first = fut.result()
+            if s is not None:
+                winner = (proxy, s)
+                break
+    finally:
+        ex.shutdown(wait=False, cancel_futures=True)
+    if winner is None:
+        print("      无可用出口", flush=True)
+        results.append("proxy:no_exit")
+        return results
+    proxy, s = winner
+    print(f"      出口 {proxy}（匿名主页验证通过，session 已有 csrftoken）", flush=True)
+    add_cookie(s, first_cookie)
+    try:
+        r = reels_media(s, uid0)
+        authed = "reels_media" in r.text
+        is_json = r.text[:1] in "{["
+        print(f"      HTTP {r.status_code} authed={authed} json={is_json} "
+              f"body={r.text[:120]!r}", flush=True)
+        results.append(f"proxy:{r.status_code}:{'authed' if authed else 'empty'}")
+    except Exception as e:
+        print(f"      经代理失败: {type(e).__name__}: {str(e)[:90]}", flush=True)
+        results.append("proxy:err")
+    return results
+
+
 def main():
     print(f"IG anonymous probe v7: userid={USERID} attempts={ATTEMPTS}", flush=True)
     print("===== E. anonymous feed/user/{id} (PR #2722 复刻，对照：上游已 401) =====", flush=True)
@@ -624,11 +717,15 @@ def main():
     rh = probe_url_proxies()
     print("===== G. free proxy pool × profile-page (免费出口实测) =====", flush=True)
     rg = probe_free_pool()
+    time.sleep(GAP)
+    print("===== I. story cookie via free residential proxy (管道验证) =====", flush=True)
+    ri = probe_story_pool()
     print("===== SUMMARY =====", flush=True)
     print(f"E feed-anon: {re_}", flush=True)
     print(f"F profile-page: {rf}", flush=True)
     print(f"H url-proxy: {rh}", flush=True)
     print(f"G free-pool: working={len(rg)} {rg[:8]}", flush=True)
+    print(f"I story-pool: {ri}", flush=True)
 
 
 if __name__ == "__main__":
