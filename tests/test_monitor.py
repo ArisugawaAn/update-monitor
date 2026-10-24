@@ -1633,8 +1633,7 @@ def test_sources_catalog_covers_all_sources():
     cat = {c["source_key"] + "|" + c["account_name"]
            for c in ekdb_push.sources_catalog()}
     for name, _uid in config.IG_ACCOUNTS:
-        assert f"ig_story|{name}" in cat
-        assert f"ig_anon|{name}" in cat  # 免账号通道（2026-10 起，替代 ig_post）
+        assert f"ig_anon|{name}" in cat  # 免账号通道（2026-10 起，替代 ig_post/ig_story）
     assert "x|@miyamoto_hiroji" in cat
     assert "x_paonews_info|@paonews_info" in cat
     assert "x_elekashi_ofcl|@elekashi_ofcl" in cat

@@ -1,5 +1,10 @@
 """Instagram Story 源（已 POC 验证）：reels_media XHR，重复参数形态。
 
+【2026-10-24 停用】story 在场检测已由 ig_anon 的零账号层（latest_reel_media，
+10 分钟）覆盖，媒体内容用户手动查看 → 本源不再注册进 build_sources。模块与
+粘滞住宅出口逻辑完整保留：恢复 = build_sources 加回 ig_story.source() 并更新
+IG_COOKIE secret。
+
 会话与多通道容灾：
   生产：IG_COOKIE 可含**多个** cookie（换行或 "|||" 分隔），每 10 分钟窗口
         轮换起始号均摊压力；某个 cookie 被 IG 拒绝（匿名空响应/401）时本轮

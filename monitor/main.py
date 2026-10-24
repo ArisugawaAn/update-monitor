@@ -19,10 +19,12 @@ def _now_ts() -> float:
 
 
 def build_sources() -> list:
-    from monitor.sources import ig_anon, ig_story, tiktok, websites, x_twitter, youtube
+    from monitor.sources import ig_anon, tiktok, websites, x_twitter, youtube
     return [
-        ig_story.source(),
-        ig_anon.source(),  # 免账号 post/reel 通道（2026-10 起，替代 ig_post；ig_post 模块保留为兜底）
+        # ig_story（cookie 通道）2026-10-24 停用：story 在场检测由 ig_anon 的
+        # latest_reel_media 零账号层覆盖（10 分钟），媒体内容用户手动查看。
+        # 恢复 = 加回 ig_story.source() + 更新 IG_COOKIE secret。
+        ig_anon.source(),  # 免账号 post/reel + story 在场检测（替代 ig_post/ig_story）
         *[x_twitter.source(user) for user in config.X_USERS],  # 主号在前，每轮查
         *[youtube.source(name, cid) for name, cid in config.YOUTUBE_CHANNELS],
         *[tiktok.source(handle, sec) for handle, sec in config.TIKTOK_ACCOUNTS],
