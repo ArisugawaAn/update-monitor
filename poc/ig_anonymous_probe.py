@@ -516,55 +516,64 @@ def probe_free_pool() -> list:
         except Exception:
             print(f"  WORKING {p} edges={edges}", flush=True)
 
-    # 闭环验证（= 生产流程原型）：经同一可用代理做单帖详情查询（拿 caption/时间）。
-    # 403 修正：复用 Session——先触一次页面拿 csrftoken 等 cookie，再带 X-CSRFToken 打 graphql。
-    # 内容演示：经第一个可用代理把三账号的最新帖子完整打出来（= 生产数据形态）。
+    # 闭环验证（= 生产流程原型）：经可用代理做内容转储与单帖详情。
+    # 免费代理"刚验证完就死"是常态 → 失败自动换下一个可用代理（生产同款逻辑）。
+    # 详情查询 403 修正：复用 Session——先触一次页面拿 csrftoken，再带 X-CSRFToken 打 graphql。
     if oks:
-        p0 = oks[0][0]
-        print(f"  内容演示（经 {p0}）:", flush=True)
+        print(f"  内容演示（{len(oks)} 个可用代理轮换）:", flush=True)
+        pi = 0
         for name, uid in PROBE_ACCOUNTS:
-            try:
-                r = requests.get(f"https://www.instagram.com/{name.lower()}/",
-                                 headers={"Accept": "text/html",
-                                          "Sec-Fetch-Dest": "document",
-                                          "Sec-Fetch-Mode": "navigate",
-                                          "Sec-Fetch-Site": "none",
-                                          "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
-                                                        "AppleWebKit/537.36 (KHTML, like Gecko) "
-                                                        "Chrome/142.0.0.0 Safari/537.36"},
-                                 proxies={"http": f"http://{p0}", "https": f"http://{p0}"},
-                                 timeout=(5, 12), allow_redirects=False)
-                if r.status_code != 200:
-                    print(f"    @{name}: HTTP {r.status_code}", flush=True)
-                    continue
-                user: dict = {}
-                for script in _re.finditer(
-                        r'<script type="application/json"[^>]*>(.*?)</script>',
-                        r.text, _re.DOTALL):
-                    try:
-                        for data in _embedded_query_data(json.loads(script.group(1))):
-                            u = data.get("xig_user_by_username") or {}
-                            if u.get("pk"):
-                                user.update(u)
-                    except json.decoder.JSONDecodeError:
-                        pass
-                tl = user.pop("polaris_ordered_timeline_connection", None) or {}
-                edges = tl.get("edges") or []
-                print(f"    @{name}: pk={user.get('pk')} edges={len(edges)}", flush=True)
-                for idx, e in enumerate(edges, 1):
-                    node = e.get("node") or {}
-                    code = node.get("code")
-                    pt = node.get("product_type") or f"type{node.get('media_type')}"
-                    cap = node.get("caption")
-                    if isinstance(cap, dict):
-                        cap = cap.get("text") or ""
-                    path = "reel" if pt == "clips" else "p"
-                    print(f"      {idx:>2}. [{pt}] {code}  "
-                          f"https://www.instagram.com/{path}/{code}/  "
-                          f"{(cap or '')[:48]!r}", flush=True)
-            except Exception as e:
-                print(f"    @{name}: {type(e).__name__}: {str(e)[:70]}", flush=True)
-    for p, _ in oks[:2]:
+            for _ in range(4):
+                if pi >= len(oks):
+                    print(f"    @{name}: 可用代理耗尽", flush=True)
+                    break
+                p0 = oks[pi][0]
+                try:
+                    r = requests.get(f"https://www.instagram.com/{name.lower()}/",
+                                     headers={"Accept": "text/html",
+                                              "Sec-Fetch-Dest": "document",
+                                              "Sec-Fetch-Mode": "navigate",
+                                              "Sec-Fetch-Site": "none",
+                                              "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
+                                                            "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                                            "Chrome/142.0.0.0 Safari/537.36"},
+                                     proxies={"http": f"http://{p0}", "https": f"http://{p0}"},
+                                     timeout=(5, 12), allow_redirects=False)
+                    if r.status_code != 200:
+                        print(f"    @{name} via {p0}: HTTP {r.status_code} → 换代理", flush=True)
+                        pi += 1
+                        continue
+                    user: dict = {}
+                    for script in _re.finditer(
+                            r'<script type="application/json"[^>]*>(.*?)</script>',
+                            r.text, _re.DOTALL):
+                        try:
+                            for data in _embedded_query_data(json.loads(script.group(1))):
+                                u = data.get("xig_user_by_username") or {}
+                                if u.get("pk"):
+                                    user.update(u)
+                        except json.decoder.JSONDecodeError:
+                            pass
+                    tl = user.pop("polaris_ordered_timeline_connection", None) or {}
+                    edges = tl.get("edges") or []
+                    print(f"    @{name} (pk={user.get('pk')} 经 {p0}): edges={len(edges)}",
+                          flush=True)
+                    for idx, e in enumerate(edges, 1):
+                        node = e.get("node") or {}
+                        code = node.get("code")
+                        pt = node.get("product_type") or f"type{node.get('media_type')}"
+                        cap = node.get("caption")
+                        if isinstance(cap, dict):
+                            cap = cap.get("text") or ""
+                        path = "reel" if pt == "clips" else "p"
+                        print(f"      {idx:>2}. [{pt}] {code}  "
+                              f"https://www.instagram.com/{path}/{code}/  "
+                              f"{(cap or '')[:48]!r}", flush=True)
+                    break
+                except Exception as e:
+                    print(f"    @{name} via {p0}: {type(e).__name__} → 换代理", flush=True)
+                    pi += 1
+    for p, _ in oks[:3]:
         code = ok_code.get(p)
         if not code:
             continue
