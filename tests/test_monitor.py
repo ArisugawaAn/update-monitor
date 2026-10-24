@@ -1133,6 +1133,7 @@ def test_ig_anon_story_presence_detection():
     assert p.external_id == "story-1792812141"
     assert p.url == "https://www.instagram.com/stories/miyamoto_doppo/"
     assert p.published_at is not None and p.published_at.year == 2026
+    assert "分钟前" in p.title  # 标题带"最新一条"年龄，追加条目 = 新时间戳 = 再提醒
 
     user["latest_reel_media"] = "0"
     ups0 = ig_anon._emit("miyamoto_doppo", 10584438821, (user, edges), s)
