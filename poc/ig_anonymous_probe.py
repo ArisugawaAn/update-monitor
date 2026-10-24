@@ -218,12 +218,119 @@ def probe_feed_anon() -> list:
     return results
 
 
+def _embedded_query_data(obj):
+    """与 instaloader master _embedded_query_data 相同：递归收集 __bbox.result.data。"""
+    if isinstance(obj, dict):
+        result = obj["__bbox"].get("result") if isinstance(obj.get("__bbox"), dict) else None
+        if isinstance(result, dict) and isinstance(result.get("data"), dict):
+            yield result["data"]
+        for value in obj.values():
+            yield from _embedded_query_data(value)
+    elif isinstance(obj, list):
+        for value in obj:
+            yield from _embedded_query_data(value)
+
+
+def probe_profile_page() -> list:
+    """方法 F（PR instaloader#2782 精确复刻）：匿名主页 HTML 内嵌 JSON 抓最新帖子。
+
+    背景（instaloader 社区 2026-10-19 结论，接替已死的匿名 feed/user）：
+      匿名 graphql 时间线（doc_id 7950326061742207）与 api/v1/feed/user/ 均返回
+      401，web_profile_info 401/429/400；唯一存活的是个人主页 HTML——未登录访客
+      仍能看到最新 12 条（含置顶），内嵌在 <script type="application/json"> 的
+      xig_user_by_username → polaris_ordered_timeline_connection.edges[*].node.code；
+      随后匿名单帖查询（Post.from_shortcode，doc_id 27128499623469141）仍可用。
+    关键实现细节（复刻 master 的 context.get_page_data，4.15.3 无此方法）：
+      - 请求必须伪装成浏览器页面导航：Accept: text/html + Sec-Fetch-Dest/Mode/Site
+      - 不跟随重定向（302 = 被要求登录）
+      - 解析所有 application/json script 块，递归取 __bbox.result.data
+    流程（纯匿名，不碰任何账号）：
+      [1] GET /{username}/ → 用户 pk + 时间线短码列表（≤12 条）
+      [2] 前两个短码各做一次匿名 from_shortcode 详情查询
+    """
+    import json
+    import re as _re
+
+    import requests
+    from instaloader import Instaloader, Post
+
+    results = []
+    for i in range(ATTEMPTS):
+        try:
+            s = requests.Session()
+            s.headers["User-Agent"] = ("Mozilla/5.0 (X11; Linux x86_64) "
+                                       "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                       "Chrome/142.0.0.0 Safari/537.36")
+            r = s.get(f"https://www.instagram.com/{USERNAME.lower()}/",
+                      headers={"Accept": "text/html",
+                               "Sec-Fetch-Dest": "document",
+                               "Sec-Fetch-Mode": "navigate",
+                               "Sec-Fetch-Site": "none"},
+                      allow_redirects=False, timeout=25)
+            print(f"  [{i+1}] page HTTP {r.status_code} bytes={len(r.text)}", flush=True)
+            if r.status_code == 302:
+                print(f"      重定向: {r.headers.get('Location', '')[:80]}（被要求登录）",
+                      flush=True)
+                results.append("redirect_302")
+                continue
+            if r.status_code != 200:
+                print(f"      body: {r.text[:150]!r}", flush=True)
+                results.append(f"http_{r.status_code}")
+                continue
+            blobs: list = []
+            for script in _re.finditer(
+                    r'<script type="application/json"[^>]*>(.*?)</script>',
+                    r.text, _re.DOTALL):
+                try:
+                    blobs.extend(_embedded_query_data(json.loads(script.group(1))))
+                except json.decoder.JSONDecodeError:
+                    pass
+            user: dict = {}
+            for data in blobs:
+                user.update(data.get("xig_user_by_username") or {})
+            timeline = user.pop("polaris_ordered_timeline_connection", None) or {}
+            edges = timeline.get("edges") or []
+            codes = [e["node"].get("code") for e in edges
+                     if isinstance(e, dict) and e.get("node")]
+            print(f"      json_blobs={len(blobs)} user_pk={user.get('pk')} "
+                  f"edges={len(edges)} has_next={timeline.get('page_info', {}).get('has_next_page')}",
+                  flush=True)
+            print(f"      codes: {codes}", flush=True)
+            if not codes:
+                results.append("no_posts" if user.get("pk") else "no_user_data")
+                continue
+            # [2] 匿名单帖详情（PR 依赖的另一半：from_shortcode 仍匿名可用）
+            L = Instaloader(quiet=True, download_comments=False, save_metadata=False,
+                            post_metadata_txt_pattern="")
+            L.context.max_connection_attempts = 2
+            for code in codes[:2]:
+                try:
+                    p = Post.from_shortcode(L.context, code)
+                    print(f"        detail {code}: type={p.typename} "
+                          f"date={p.date_local:%Y-%m-%d %H:%M} "
+                          f"caption={(p.caption or '')[:36]!r}", flush=True)
+                except Exception as e:
+                    print(f"        detail {code}: FAIL {type(e).__name__}: "
+                          f"{str(e)[:110]}", flush=True)
+            results.append("OK")
+        except Exception as e:
+            print(f"  [{i+1}] FAIL: {type(e).__name__}: {str(e)[:130]}", flush=True)
+            results.append(type(e).__name__)
+        if i < ATTEMPTS - 1:
+            time.sleep(GAP)
+    return results
+
+
 def main():
-    print(f"IG anonymous probe v5: userid={USERID} attempts={ATTEMPTS}", flush=True)
-    print("===== E. anonymous feed/user/{id} (PR #2722 复刻，核心验证) =====", flush=True)
+    print(f"IG anonymous probe v6: userid={USERID} attempts={ATTEMPTS}", flush=True)
+    print("===== E. anonymous feed/user/{id} (PR #2722 复刻，对照：上游已 401) =====", flush=True)
     re_ = probe_feed_anon()
+    time.sleep(GAP)
+    print("===== F. anonymous profile-page HTML (PR #2782 复刻，核心验证) =====", flush=True)
+    rf = probe_profile_page()
     print("===== SUMMARY =====", flush=True)
     print(f"E feed-anon: {re_}", flush=True)
+    print(f"F profile-page: {rf}", flush=True)
 
 
 if __name__ == "__main__":
