@@ -101,8 +101,8 @@
     "2113556179263869050"
    ],
    "baselined": true,
-   "last_checked_tick": 11553,
-   "last_checked_at": 1792840547.030878,
+   "last_checked_tick": 11554,
+   "last_checked_at": 1792840846.956513,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -125,17 +125,19 @@
     "BWwEKJkUMPI",
     "08QiRh9ffTg",
     "AXhH0Qav2Po",
-    "imUTWunRgbA"
+    "imUTWunRgbA",
+    "fqOAzNo2ZCk"
    ],
    "notified": [
     "BWwEKJkUMPI",
     "08QiRh9ffTg",
     "AXhH0Qav2Po",
-    "imUTWunRgbA"
+    "imUTWunRgbA",
+    "fqOAzNo2ZCk"
    ],
    "baselined": true,
-   "last_checked_tick": 11552,
-   "last_checked_at": 1792840254.981248,
+   "last_checked_tick": 11554,
+   "last_checked_at": 1792840846.956513,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -158,8 +160,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 11552,
-   "last_checked_at": 1792840254.981248,
+   "last_checked_tick": 11554,
+   "last_checked_at": 1792840846.956513,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -185,8 +187,8 @@
     "count-13"
    ],
    "baselined": true,
-   "last_checked_tick": 11552,
-   "last_checked_at": 1792840254.981248,
+   "last_checked_tick": 11554,
+   "last_checked_at": 1792840846.956513,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -279,8 +281,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 11553,
-   "last_checked_at": 1792840547.030878,
+   "last_checked_tick": 11554,
+   "last_checked_at": 1792840846.956513,
    "fail_streak": 0
   },
   "site_ek": {
@@ -457,17 +459,17 @@
     "story-1792823116"
    ],
    "baselined": true,
-   "last_checked_tick": 11552,
-   "last_checked_at": 1792840254.981248,
+   "last_checked_tick": 11554,
+   "last_checked_at": 1792840846.956513,
    "fail_streak": 0
   }
  },
- "tick": 11553,
+ "tick": 11554,
  "last_sweep_hour": "2026-10-24T11",
  "ig_anon_proxies": [
   {
    "proxy": "82.152.138.127:999",
-   "ok_at": 1792840265.5395494,
+   "ok_at": 1792840851.0883548,
    "fails": 0
   },
   {
