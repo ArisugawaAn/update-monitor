@@ -419,9 +419,9 @@ def _cookie(uid: str) -> str:
 def _no_route(monkeypatch):
     """story 出口路由中立化：单测不联网（不进 ig_anon 猎代理），直连 mock 路径生效。"""
     from monitor.sources import ig_story
-    monkeypatch.setattr(ig_story, "_ROUTE", None)
-    monkeypatch.setattr(ig_story, "_ROUTE_LABEL", "直连")
-    monkeypatch.setattr(ig_story, "_open_route", lambda: None)
+    monkeypatch.setattr(ig_story, "_route_for", lambda uid: (None, "直连"))
+    monkeypatch.setattr(ig_story, "_STATE", None)
+    monkeypatch.setattr(ig_story, "_ROUTES", {})
 
 
 def test_ds_user_id_extracted_from_cookie():
@@ -1391,8 +1391,8 @@ def test_ig_story_route_session_receives_cookie(monkeypatch):
             return jar.get(k)
 
     route = SimpleNamespace(cookies=FakeCookies(), headers={})
-    monkeypatch.setattr(ig_story, "_ROUTE", route)
-    monkeypatch.setattr(ig_story, "_open_route", lambda: None)
+    monkeypatch.setattr(ig_story, "_route_for",
+                        lambda uid: (route, "住宅出口 1.2.3.4:8080（粘滞）"))
 
     def boom(cookie):
         raise AssertionError("出口可用时不应走直连构建器")
@@ -1401,6 +1401,48 @@ def test_ig_story_route_session_receives_cookie(monkeypatch):
     s = ig_story._make_session("ds_user_id=111; sessionid=abc")
     assert s is route
     assert jar == {"ds_user_id": "111", "sessionid": "abc"}
+
+
+def test_ig_story_route_sticky_binding(monkeypatch):
+    """同一 cookie 跨轮粘住同一出口（绑定持久化到 state）；出口死亡才解绑换新。"""
+    from monitor import config
+    from monitor.sources import ig_anon, ig_story
+    state: dict = {"sources": {}}
+    ig_story.set_state(state)
+    monkeypatch.setattr(ig_story, "_ROUTES", {})
+    monkeypatch.setattr(config, "IG_ACCOUNTS", [("a", 10584438821)])
+
+    def fake_validate(proxy, uid):
+        assert uid == 10584438821
+        return proxy, SimpleNamespace(name=f"s-{proxy}"), ("u", [])
+
+    monkeypatch.setattr(ig_anon, "_validate_proxy", fake_validate)
+    acquires = {"n": 0}
+
+    def fake_acquire():
+        acquires["n"] += 1
+        return "9.9.9.9:80", SimpleNamespace(name="s-new"), ("u", [])
+
+    monkeypatch.setattr(ig_anon, "_acquire", fake_acquire)
+
+    s1, label1 = ig_story._route_for("111")
+    assert s1.name == "s-new" and "9.9.9.9:80" in label1
+    assert state["ig_story_routes"]["111"]["proxy"] == "9.9.9.9:80"
+
+    ig_story._ROUTES.clear()
+    s2, _ = ig_story._route_for("111")
+    assert s2.name == "s-9.9.9.9:80" and acquires["n"] == 1  # 绑定验证走 fake_validate
+
+    def dead_validate(proxy, uid):
+        return proxy, None, None
+
+    monkeypatch.setattr(ig_anon, "_validate_proxy", dead_validate)
+    ig_story._ROUTES.clear()  # 模拟下一轮（新进程）
+    s3, _ = ig_story._route_for("111")
+    assert s3.name == "s-new" and acquires["n"] == 2  # 死亡解绑 → 再 acquire 一次
+    ig_story._STATE = None  # 清理
+    ig_story._MEM_BINDINGS.clear()
+    ig_story._ROUTES.clear()
 
 
 def test_ig_story_health_note_reflects_session(monkeypatch):

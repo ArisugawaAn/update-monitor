@@ -11,9 +11,11 @@
         同样标注被接管的号。
   本地 POC：instaloader session 文件（惰性导入，生产无需安装）。
 
-出口路由（2026-10 v2）：cookie 请求优先经 ig_anon 的免费住宅代理池——
+出口路由（2026-10 v2.1）：cookie 请求优先经 ig_anon 的免费住宅代理池——
   Azure 数据中心出口反复打 API 是会话被标记/封号的根因（本周 cookie 全灭
-  的直接原因）；住宅出口每次不同 IP，风险模型里只是普通访客。http 代理对
+  的直接原因）。**粘滞绑定**：每个 cookie（按 ds_user_id）长期固定一个住宅
+  出口并持久化到 state——真实用户的 IP 是稳定的，会话每 10 分钟换一个国家
+  （impossible travel）反而是风控信号；出口死亡才解绑换新。http 代理对
   https 目标是 CONNECT 哑管道（TLS 由本端校验），代理读不到也改不了 cookie。
   池子不可用时回退直连。IG 2026-10 行为：无效/被标记会话打 reels_media
   返回 HTML 登录墙（非 JSON，曾为"干净空 JSON"）——本源把非 JSON 一律判为
@@ -34,26 +36,67 @@ _ROTATE_WINDOW = 600  # 秒；轮换窗口 ≈ 检查间隔，相邻窗口用不
 _LAST_AUTH: bool | None = None  # 最近一次 check 的会话判定（test-email 健康检查展示用）
 _LAST_COOKIE = ""               # 成功服务的 cookie 标识（tag），如 "viewer-a·uid111" 或 "2/3"
 _LAST_DEAD: list[tuple[str, str]] = []  # 最近一次 check 中会话失效的 (标识, 原因)，供单号报警
-_ROUTE: requests.Session | None = None  # 本轮住宅出口会话（_open_route 设置；None=直连）
-_ROUTE_LABEL = ""                       # health_note 展示用
+_STATE: dict | None = None      # main 经 set_state 注入（粘滞绑定随 monitor_state.json 持久化）
+_ROUTES: dict[str, tuple] = {}  # 本进程内 uid → (proxy, session, label)；每轮进程天然重置
+_MEM_BINDINGS: list = []        # 无 state 时（本地调试）的内存绑定
+_LAST_ROUTE_LABEL = ""          # health_note 展示用
 
-def _open_route() -> None:
-    """每轮开始时取一个住宅出口（复用 ig_anon 的猎取/缓存）；失败回退直连。"""
-    global _ROUTE, _ROUTE_LABEL
-    _ROUTE, _ROUTE_LABEL = None, "直连（免费出口不可用）"
+
+def set_state(state: dict) -> None:
+    """main.run_once 在 check 前注入 state 引用（粘滞绑定持久化）。"""
+    global _STATE
+    _STATE = state
+
+
+def _bindings() -> dict:
+    """uid → {"proxy": "ip:port", "since": ts}。无 state 时退化为内存字典。"""
+    if _STATE is not None:
+        return _STATE.setdefault("ig_story_routes", {})
+    return _MEM_BINDINGS
+
+
+def _route_for(uid: str):
+    """该 cookie 的常驻出口：粘滞绑定（跨轮持久化），出口死亡才解绑换新。
+
+    返回 (session, label)；session=None 表示回退直连。绑定验证复用
+    ig_anon 的匿名主页探测（一个出口是否活着与打哪个端点无关）。
+    """
+    if uid in _ROUTES:  # 本进程（= 本轮）内已解析
+        proxy, s, label = _ROUTES[uid]
+        return s, label
+    from monitor.sources import ig_anon
+
+    bind = _bindings().get(uid) or {}
+    proxy = bind.get("proxy")
+    if proxy:
+        _p, s, _first = ig_anon._validate_proxy(proxy, int(config.IG_ACCOUNTS[0][1]))
+        if s is not None:
+            ig_anon._cache_touch(proxy)
+            _ROUTES[uid] = (proxy, s, f"住宅出口 {proxy}（粘滞）")
+            return s, _ROUTES[uid][2]
+        _bindings().pop(uid, None)  # 出口死亡 → 解绑，落到下面的换新
     try:
-        from monitor.sources import ig_anon
         label, s, _first = ig_anon._acquire()
-        _ROUTE, _ROUTE_LABEL = s, f"住宅出口 {label}"
     except Exception:
-        pass
+        _ROUTES[uid] = ("", None, "直连（免费出口不可用）")
+        return None, _ROUTES[uid][2]
+    proxy_str = None if label == "直连" else label
+    if proxy_str:
+        _bindings()[uid] = {"proxy": proxy_str, "since": time.time()}
+        _ROUTES[uid] = (proxy_str, s, f"住宅出口 {proxy_str}")
+        return s, _ROUTES[uid][2]
+    _ROUTES[uid] = ("", s, "直连")  # 本地调试的直连候选：无需绑定
+    return s, "直连"
 
 
 def _make_session(cookie: str) -> requests.Session:
-    """生产会话：住宅出口可用时在出口 Session 上挂 cookie（连接复用、出口固定），
-    否则按原直连方式构建。"""
-    if _ROUTE is not None:
-        s = _ROUTE
+    """生产会话：按 cookie 的粘滞出口构建（出口 Session 上挂 cookie），无出口则直连。"""
+    uid = _ds_user_id(cookie) or "noid"
+    global _LAST_ROUTE_LABEL
+    s0, label = _route_for(uid)
+    _LAST_ROUTE_LABEL = label
+    if s0 is not None:
+        s = s0
         for part in cookie.replace("\n", ";").split(";"):
             if "=" in part:
                 k, v = part.strip().split("=", 1)
@@ -211,7 +254,7 @@ def check() -> list[Update]:
     # 其他错误（网络/限流/HTTP）与账号无关，直接上抛不尝试剩余 cookie。
     # 所有抛出的错误都带 cookie 标识（命名/序号 + ds_user_id），
     # 报警邮件（连续失败/限流/checkpoint）据此可定位到具体账号。
-    _open_route()  # 每轮取一个住宅出口（cookie 请求不再从 Azure 直打）；失败回退直连
+    # 出口在 _make_session 内按 cookie 懒解析（粘滞绑定，避免 impossible-travel）。
     start = int(time.time() // _ROTATE_WINDOW) % len(cookies)
     attempts: list[str] = []          # 每个 cookie 的失效原因；全部失效时并入最终错误
     dead: list[tuple[str, str]] = []  # (标识, 原因)：本轮会话失效的号，供 main 单号报警
@@ -247,7 +290,7 @@ def cookie_status() -> tuple[str, list[tuple[str, str]]]:
 
 def health_note() -> str:
     """test-email 健康检查的会话状态说明（基于最近一次 check 的响应判据）。"""
-    route = f"｜出口 {_ROUTE_LABEL}" if _ROUTE_LABEL else ""
+    route = f"｜出口 {_LAST_ROUTE_LABEL}" if _LAST_ROUTE_LABEL else ""
     if _LAST_AUTH:
         note = f"｜已登录✓ 会话有效（cookie {_LAST_COOKIE}，响应含 reels_media 标记）{route}"
         if _LAST_DEAD:  # 轮换顶上了 ≠ 没事：被接管的失效号在健康快照里也要看得见
@@ -261,4 +304,5 @@ def health_note() -> str:
 def source():
     from types import SimpleNamespace
     return SimpleNamespace(key="ig_story", platform="instagram", check=check,
-                           health_note=health_note, cookie_status=cookie_status)
+                           set_state=set_state, health_note=health_note,
+                           cookie_status=cookie_status)
