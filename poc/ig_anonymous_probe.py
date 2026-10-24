@@ -231,7 +231,7 @@ def _embedded_query_data(obj):
             yield from _embedded_query_data(value)
 
 
-def probe_profile_page() -> list:
+def probe_profile_page(username: str = USERNAME, userid: str = USERID) -> list:
     """方法 F（PR instaloader#2782 精确复刻）：匿名主页 HTML 内嵌 JSON 抓最新帖子。
 
     背景（instaloader 社区 2026-10-19 结论，接替已死的匿名 feed/user）：
@@ -261,7 +261,7 @@ def probe_profile_page() -> list:
             s.headers["User-Agent"] = ("Mozilla/5.0 (X11; Linux x86_64) "
                                        "AppleWebKit/537.36 (KHTML, like Gecko) "
                                        "Chrome/142.0.0.0 Safari/537.36")
-            r = s.get(f"https://www.instagram.com/{USERNAME.lower()}/",
+            r = s.get(f"https://www.instagram.com/{username.lower()}/",
                       headers={"Accept": "text/html",
                                "Sec-Fetch-Dest": "document",
                                "Sec-Fetch-Mode": "navigate",
@@ -295,7 +295,16 @@ def probe_profile_page() -> list:
             print(f"      json_blobs={len(blobs)} user_pk={user.get('pk')} "
                   f"edges={len(edges)} has_next={timeline.get('page_info', {}).get('has_next_page')}",
                   flush=True)
-            print(f"      codes: {codes}", flush=True)
+            for idx, e in enumerate(edges, 1):
+                node = e.get("node") or {}
+                code = node.get("code")
+                pt = node.get("product_type") or f"type{node.get('media_type')}"
+                cap = node.get("caption")
+                if isinstance(cap, dict):
+                    cap = cap.get("text") or ""
+                print(f"      {idx:>2}. [{pt}] {code}  {(cap or '')[:52]!r}", flush=True)
+            codes = [e["node"].get("code") for e in edges
+                     if isinstance(e, dict) and e.get("node")]
             if not codes:
                 results.append("no_posts" if user.get("pk") else "no_user_data")
                 continue
@@ -323,6 +332,23 @@ def probe_profile_page() -> list:
 
 _POOL_CAP = 600
 _POOL_WORKERS = 50
+# 已验证存活的免费代理（按存活轮次降序、再按新旧）——优先逐个尝试，命中即用。
+# 生产实现：该列表来自 state 缓存（上一周期验证过的好代理排最前），本处为实测快照。
+_KNOWN_GOOD_PROXIES = [
+    "45.232.210.225:999",   # 3 轮中存活 2 轮（G v1、v3），v3 经它完成详情查询 200
+    # ---- G v3（2026-10-24 03:24 UTC）----
+    "173.180.22.3:80", "201.4.69.29:8080", "103.189.97.38:1080",
+    "182.253.109.102:8080", "103.82.246.93:6080", "200.59.191.137:999",
+    "103.173.230.250:8080", "189.90.248.229:8080", "176.88.65.165:8080",
+    # ---- G v2（2026-10-24 03:15 UTC）----
+    "201.7.31.115:8080", "82.152.138.127:999", "8.242.245.230:999",
+    "193.43.140.85:8080", "202.58.77.195:8080", "190.94.213.20:999",
+    "203.76.222.232:8090",
+    # ---- G v1（2026-10-24 02:50 UTC）----
+    "205.234.123.37:8080", "119.94.127.108:8081", "202.58.77.239:8080",
+    "186.167.113.103:999", "45.149.24.19:8088", "179.126.34.189:8080",
+    "5.129.254.243:8888", "181.78.195.137:999",
+]
 _POOL_SOURCES = [
     ("TheSpeedX", "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt"),
     ("monosans", "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt"),
@@ -333,6 +359,11 @@ _URL_PROXY_SERVICES = [
     ("allorigins", "https://api.allorigins.win/raw?url={url}"),
     ("corsproxy.io", "https://corsproxy.io/?url={url}"),
     ("codetabs", "https://api.codetabs.com/v1/proxy?quest={url}"),
+]
+PROBE_ACCOUNTS = [  # 与 monitor/config.IG_ACCOUNTS 一致
+    ("miyamoto_doppo", 10584438821),
+    ("elephantsinc_official", 66821998949),
+    ("h.m.staff", 71496324324),
 ]
 
 
@@ -415,8 +446,6 @@ def probe_free_pool() -> list:
         random.shuffle(uniq)
         return uniq[:_POOL_CAP]
 
-    pool = fetch_pool()
-    print(f"  池子: {len(pool)} 个候选，{_POOL_WORKERS} 并发，每个只碰一次", flush=True)
     ok_code: dict = {}   # 可用代理 → 首条短码（供同代理详情查询闭环）
     def check(proxy: str):
         try:
@@ -453,10 +482,26 @@ def probe_free_pool() -> list:
             pass
         return proxy, "no_data", len(r.text)
 
-    results = []
-    with ThreadPoolExecutor(max_workers=_POOL_WORKERS) as ex:
-        for res in ex.map(check, pool):
-            results.append(res)
+    import os
+    results, oks = [], []
+    print(f"  已知好代理优先：{len(_KNOWN_GOOD_PROXIES)} 个逐个单触", flush=True)
+    kg_alive = []
+    for p in _KNOWN_GOOD_PROXIES:
+        proxy, status, extra = check(p)
+        results.append((proxy, status, extra))
+        if status == "ok":
+            oks.append((p, extra))
+            kg_alive.append(p)
+    print(f"  已知好代理存活: {len(kg_alive)}/{len(_KNOWN_GOOD_PROXIES)}: "
+          f"{kg_alive or '无'}", flush=True)
+    if os.environ.get("IG_POOL_SKIP") and kg_alive:
+        print("  已知好代理命中 → 跳过池子阶段（IG_POOL_SKIP=1）", flush=True)
+    else:
+        pool = fetch_pool()
+        print(f"  池子: {len(pool)} 个候选，{_POOL_WORKERS} 并发，每个只碰一次", flush=True)
+        with ThreadPoolExecutor(max_workers=_POOL_WORKERS) as ex:
+            for res in ex.map(check, pool):
+                results.append(res)
     stats: dict = {}
     for _, s, _ in results:
         stats[s] = stats.get(s, 0) + 1
@@ -513,8 +558,12 @@ def main():
     print("===== E. anonymous feed/user/{id} (PR #2722 复刻，对照：上游已 401) =====", flush=True)
     re_ = probe_feed_anon()
     time.sleep(GAP)
-    print("===== F. anonymous profile-page HTML (PR #2782 复刻，核心验证) =====", flush=True)
-    rf = probe_profile_page()
+    print("===== F. anonymous profile-page HTML (PR #2782 复刻，三账号内容实测) =====", flush=True)
+    rf = []
+    for name, uid in PROBE_ACCOUNTS:
+        print(f"  --- @{name} (uid={uid}) ---", flush=True)
+        rf.extend(probe_profile_page(name, str(uid)))
+        time.sleep(GAP)
     time.sleep(GAP)
     print("===== H. public URL-proxy services (CF Workers 等出口) =====", flush=True)
     rh = probe_url_proxies()
