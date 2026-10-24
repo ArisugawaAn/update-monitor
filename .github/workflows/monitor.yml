@@ -72,7 +72,26 @@ jobs:
           git config user.name "monitor-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add monitor_state.json
-          git diff --cached --quiet || (git commit -m "state update [skip ci]" && git push)
+          git diff --cached --quiet || git commit -m "state update [skip ci]"
+          # push 竞态重试：本轮 checkout 后远端又前进（部署推送/其他 state 提交）
+          # 时会被拒。fetch+rebase 后重试最多 3 次；若 rebase 在 monitor_state.json
+          # 上冲突（说明远端已有更新的 state），放弃本地这份——下轮从实时数据重写。
+          for i in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "state pushed (attempt $i)"
+              exit 0
+            fi
+            echo "push rejected (attempt $i) — fetch+rebase 后重试"
+            git fetch origin main || true
+            git rebase origin/main || {
+              git rebase --abort
+              echo "rebase 冲突：远端已有更新 state，放弃本轮回写（下轮自动补上，不影响监测）"
+              exit 0
+            }
+            sleep $((RANDOM % 8 + 4))
+          done
+          echo "push 3 次均被拒"
+          exit 1
 
       - name: Daily heartbeat
         run: |
