@@ -314,6 +314,23 @@ def _emit(name: str, uid: int | str, user_edges: tuple[dict, list],
             if d:
                 details[code] = d
     out: list[Update] = []
+    # ---- story 在场检测（零账号）：xig_user_by_username.latest_reel_media = 最新
+    # story 的 epoch 时间戳，0 = 无。匿名页面就带（@nba 实测 1792812141 vs 无 story
+    # 账号为 0），彩色圈的数据源就在这。external_id 用时间戳 → 每个 story 批次只
+    # 报一次，追加新条目会更新时间戳 → 再报。cookie 通道恢复后，story 内容仍由
+    # ig_story 提供，这里是在场告警的保底层。
+    try:
+        reel_ts = int(user.get("latest_reel_media") or 0)
+    except (TypeError, ValueError):
+        reel_ts = 0
+    if reel_ts > 0:
+        started = datetime.fromtimestamp(reel_ts, timezone.utc)
+        out.append(Update(
+            source_key="ig_anon", platform="instagram", account_name=f"@{name}",
+            content_type="story", external_id=f"story-{reel_ts}",
+            title=f"Story 在场（自 {started:%m-%d %H:%M} UTC 起，内容经 cookie 通道获取）",
+            url=f"https://www.instagram.com/stories/{name}/",
+            published_at=started))
     for node in edges:
         code = node.get("code")
         if not code:
