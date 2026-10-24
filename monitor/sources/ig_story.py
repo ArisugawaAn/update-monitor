@@ -10,6 +10,14 @@
         后自动重新武装），不留"看似正常"的静默死亡；test-email 健康快照
         同样标注被接管的号。
   本地 POC：instaloader session 文件（惰性导入，生产无需安装）。
+
+出口路由（2026-10 v2）：cookie 请求优先经 ig_anon 的免费住宅代理池——
+  Azure 数据中心出口反复打 API 是会话被标记/封号的根因（本周 cookie 全灭
+  的直接原因）；住宅出口每次不同 IP，风险模型里只是普通访客。http 代理对
+  https 目标是 CONNECT 哑管道（TLS 由本端校验），代理读不到也改不了 cookie。
+  池子不可用时回退直连。IG 2026-10 行为：无效/被标记会话打 reels_media
+  返回 HTML 登录墙（非 JSON，曾为"干净空 JSON"）——本源把非 JSON 一律判为
+  会话失效并按 cookie 换手。
 """
 import time
 from datetime import datetime, timezone
@@ -26,6 +34,36 @@ _ROTATE_WINDOW = 600  # 秒；轮换窗口 ≈ 检查间隔，相邻窗口用不
 _LAST_AUTH: bool | None = None  # 最近一次 check 的会话判定（test-email 健康检查展示用）
 _LAST_COOKIE = ""               # 成功服务的 cookie 标识（tag），如 "viewer-a·uid111" 或 "2/3"
 _LAST_DEAD: list[tuple[str, str]] = []  # 最近一次 check 中会话失效的 (标识, 原因)，供单号报警
+_ROUTE: requests.Session | None = None  # 本轮住宅出口会话（_open_route 设置；None=直连）
+_ROUTE_LABEL = ""                       # health_note 展示用
+
+def _open_route() -> None:
+    """每轮开始时取一个住宅出口（复用 ig_anon 的猎取/缓存）；失败回退直连。"""
+    global _ROUTE, _ROUTE_LABEL
+    _ROUTE, _ROUTE_LABEL = None, "直连（免费出口不可用）"
+    try:
+        from monitor.sources import ig_anon
+        label, s, _first = ig_anon._acquire()
+        _ROUTE, _ROUTE_LABEL = s, f"住宅出口 {label}"
+    except Exception:
+        pass
+
+
+def _make_session(cookie: str) -> requests.Session:
+    """生产会话：住宅出口可用时在出口 Session 上挂 cookie（连接复用、出口固定），
+    否则按原直连方式构建。"""
+    if _ROUTE is not None:
+        s = _ROUTE
+        for part in cookie.replace("\n", ";").split(";"):
+            if "=" in part:
+                k, v = part.strip().split("=", 1)
+                if k and v:
+                    s.cookies.set(k.strip(), v.strip(), domain=".instagram.com")
+        csrf = s.cookies.get("csrftoken")
+        if csrf:
+            s.headers["X-CSRFToken"] = csrf
+        return s
+    return _session_cookie(cookie)
 
 
 def _ds_user_id(cookie: str) -> str:
@@ -118,7 +156,11 @@ def _fetch(s: requests.Session) -> dict:
         if "feedback_required" in r.text:
             raise SourceError("账号行为标记仍在(feedback_required)")
         raise SourceError(f"HTTP {r.status_code}")
-    data = r.json()
+    try:
+        data = r.json()
+    except ValueError:
+        # 2026-10 起 IG 对无效/被标记会话返回 HTML 登录墙（非 JSON，曾为干净空 JSON）
+        raise SourceError("会话失效：reels_media 返回非 JSON（HTML 登录墙）——需重新导入 Cookie")
     authed = "reels_media" in data or "reels_media" in (data.get("data") or {})
     if not authed:
         raise SourceError("会话失效：IG 返回未登录的匿名空响应（无 reels_media 标记）"
@@ -169,6 +211,7 @@ def check() -> list[Update]:
     # 其他错误（网络/限流/HTTP）与账号无关，直接上抛不尝试剩余 cookie。
     # 所有抛出的错误都带 cookie 标识（命名/序号 + ds_user_id），
     # 报警邮件（连续失败/限流/checkpoint）据此可定位到具体账号。
+    _open_route()  # 每轮取一个住宅出口（cookie 请求不再从 Azure 直打）；失败回退直连
     start = int(time.time() // _ROTATE_WINDOW) % len(cookies)
     attempts: list[str] = []          # 每个 cookie 的失效原因；全部失效时并入最终错误
     dead: list[tuple[str, str]] = []  # (标识, 原因)：本轮会话失效的号，供 main 单号报警
@@ -176,7 +219,7 @@ def check() -> list[Update]:
         idx = (start + offset) % len(cookies)
         tag = _cookie_tag(cookies, idx)
         try:
-            data = _fetch(_session_cookie(cookies[idx]))
+            data = _fetch(_make_session(cookies[idx]))
         except CheckpointError as e:
             raise _with_tag(e, tag)  # 账号级验证要求，交给 main 的 checkpoint 报警处理
         except SourceError as e:
@@ -204,13 +247,14 @@ def cookie_status() -> tuple[str, list[tuple[str, str]]]:
 
 def health_note() -> str:
     """test-email 健康检查的会话状态说明（基于最近一次 check 的响应判据）。"""
+    route = f"｜出口 {_ROUTE_LABEL}" if _ROUTE_LABEL else ""
     if _LAST_AUTH:
-        note = f"｜已登录✓ 会话有效（cookie {_LAST_COOKIE}，响应含 reels_media 标记）"
+        note = f"｜已登录✓ 会话有效（cookie {_LAST_COOKIE}，响应含 reels_media 标记）{route}"
         if _LAST_DEAD:  # 轮换顶上了 ≠ 没事：被接管的失效号在健康快照里也要看得见
             note += f"｜⚠ 会话失效已由其余号接管: {'、'.join(t for t, _ in _LAST_DEAD)}"
         return note
     if _LAST_AUTH is False:
-        return f"｜⚠ 未登录，Cookie 已失效（{_LAST_COOKIE}）"
+        return f"｜⚠ 未登录，Cookie 已失效（{_LAST_COOKIE}）{route}"
     return ""  # 本进程尚未跑过 check
 
 
