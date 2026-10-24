@@ -416,6 +416,14 @@ def _cookie(uid: str) -> str:
     return f"ds_user_id={uid}; sessionid=abc{uid}; csrftoken=tok"
 
 
+def _no_route(monkeypatch):
+    """story 出口路由中立化：单测不联网（不进 ig_anon 猎代理），直连 mock 路径生效。"""
+    from monitor.sources import ig_story
+    monkeypatch.setattr(ig_story, "_ROUTE", None)
+    monkeypatch.setattr(ig_story, "_ROUTE_LABEL", "直连")
+    monkeypatch.setattr(ig_story, "_open_route", lambda: None)
+
+
 def test_ds_user_id_extracted_from_cookie():
     from monitor.sources import ig_story
     assert ig_story._ds_user_id(_cookie("111")) == "111"
@@ -441,6 +449,7 @@ def test_session_failover_succeeds_and_records_serving_cookie(monkeypatch):
     monkeypatch.setattr(config, "ig_cookies", lambda: cookies)
     monkeypatch.setattr(ig_story, "time",
                         SimpleNamespace(time=lambda: 1757800800.0))  # 钉住起点=甲号
+    _no_route(monkeypatch)
 
     def fake_fetch(s):
         uid = s.cookies.get("ds_user_id")
@@ -470,6 +479,7 @@ def test_all_cookies_dead_error_lists_every_account(monkeypatch):
     monkeypatch.setattr(ig_story, "_fetch",
                         lambda s: (_ for _ in ()).throw(
                             SourceError("会话失效(401)，需重新导入 Cookie")))
+    _no_route(monkeypatch)
     with pytest.raises(SourceError) as ei:
         ig_story.check()
     msg = str(ei.value)
@@ -489,6 +499,7 @@ def test_checkpoint_error_keeps_type_and_gains_tag(monkeypatch):
     monkeypatch.setattr(config, "IG_COOKIE_LABELS", ["甲号", "乙号"])
     monkeypatch.setattr(config, "ig_cookies", lambda: cookies)
     monkeypatch.setattr(ig_story, "time", SimpleNamespace(time=lambda: _CD_NOW))  # 钉住轮换起点
+    _no_route(monkeypatch)
     calls = []
 
     def fake_fetch(s):
@@ -510,6 +521,7 @@ def test_account_unrelated_errors_raise_with_tag_without_burning_rest(monkeypatc
     monkeypatch.setattr(config, "IG_COOKIE_LABELS", ["甲号", "乙号"])
     monkeypatch.setattr(config, "ig_cookies", lambda: cookies)
     monkeypatch.setattr(ig_story, "time", SimpleNamespace(time=lambda: _CD_NOW))  # 钉住轮换起点
+    _no_route(monkeypatch)
     calls = []
 
     def fake_fetch(s):
@@ -532,6 +544,7 @@ def test_unexpected_error_wrapped_with_tag(monkeypatch):
     monkeypatch.setattr(config, "ig_cookies", lambda: cookies)
     monkeypatch.setattr(ig_story, "_fetch",
                         lambda s: (_ for _ in ()).throw(ConnectionError("reset by peer")))
+    _no_route(monkeypatch)
     with pytest.raises(SourceError) as ei:
         ig_story.check()
     msg = str(ei.value)
@@ -1198,6 +1211,7 @@ def _ig_check_with(monkeypatch, cookies_payload):
     """cookies_payload: {cookie串: 响应体}。经真实 check() 轮换路径。"""
     from monitor import config
     from monitor.sources import ig_story
+    _no_route(monkeypatch)
     monkeypatch.setattr(config, "IG_COOKIE", "|||".join(cookies_payload))
     monkeypatch.setattr(ig_story, "_session_cookie", lambda c: SimpleNamespace(
         get=lambda *a, **k: _IgStoryResp(cookies_payload[c])))
@@ -1259,6 +1273,7 @@ def test_ig_story_non_session_error_does_not_failover(monkeypatch):
 
     from monitor import config
     from monitor.sources import ig_story
+    _no_route(monkeypatch)
     monkeypatch.setattr(config, "IG_COOKIE", "a|||b")
     monkeypatch.setattr(ig_story, "_session_cookie",
                         lambda c: SimpleNamespace(get=lambda *a, **k: Resp500()))
@@ -1320,6 +1335,72 @@ def test_quiet_hours_other_sources_unaffected(monkeypatch):
     sx, cx = _fake_src("x")
     m.run_once([sx], state, {}, set(), tick=101, now=ts)
     assert cx["n"] == 1
+
+
+def test_ig_story_html_wall_counts_as_session_dead_and_rotates(monkeypatch):
+    """2026-10 IG 形态：无效会话打 reels_media 返回 HTML（非 JSON）→ 判会话失效
+    并立即换下一个 cookie（旧代码这里直接 JSONDecodeError 上抛、不换手）。"""
+    _no_route(monkeypatch)
+    from monitor import config
+    from monitor.sources import ig_story
+
+    class RespHTML:
+        status_code = 200
+        text = "<!DOCTYPE html><html>login wall</html>"
+
+        def json(self):
+            raise ValueError("Expecting value: line 1 column 1 (char 0)")
+
+    class RespAuthed:
+        status_code = 200
+        text = ""
+
+        def json(self):
+            return _ig_payload()
+
+    by_uid = {"111": RespHTML, "222": RespAuthed}
+
+    def fake_session(cookie):
+        uid = ig_story._ds_user_id(cookie)
+        cls = by_uid[uid]
+        return SimpleNamespace(get=lambda *a, **k: cls())
+
+    monkeypatch.setattr(
+        config, "IG_COOKIE", "ds_user_id=111; sessionid=a|||ds_user_id=222; sessionid=b")
+    monkeypatch.setattr(ig_story, "_make_session", fake_session)
+    monkeypatch.setattr(ig_story, "time",
+                        SimpleNamespace(time=lambda: 1757800800.0))  # 钉住起点：111 先试
+    ups = ig_story.check()
+    assert [u.external_id for u in ups] == ["123"]
+    serving, dead = ig_story.cookie_status()
+    assert "uid222" in serving
+    assert len(dead) == 1 and "HTML" in dead[0][1]
+
+
+def test_ig_story_route_session_receives_cookie(monkeypatch):
+    """住宅出口可用时：cookie 挂到出口 Session（复用连接），直连构建器不被调用。"""
+    _no_route(monkeypatch)
+    from monitor.sources import ig_story
+    jar: dict = {}
+
+    class FakeCookies:
+        def set(self, k, v, domain=None):
+            jar[k] = v
+
+        def get(self, k):
+            return jar.get(k)
+
+    route = SimpleNamespace(cookies=FakeCookies(), headers={})
+    monkeypatch.setattr(ig_story, "_ROUTE", route)
+    monkeypatch.setattr(ig_story, "_open_route", lambda: None)
+
+    def boom(cookie):
+        raise AssertionError("出口可用时不应走直连构建器")
+
+    monkeypatch.setattr(ig_story, "_session_cookie", boom)
+    s = ig_story._make_session("ds_user_id=111; sessionid=abc")
+    assert s is route
+    assert jar == {"ds_user_id": "111", "sessionid": "abc"}
 
 
 def test_ig_story_health_note_reflects_session(monkeypatch):
