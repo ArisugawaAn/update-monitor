@@ -39,8 +39,14 @@ IG_ACCOUNTS = [  # (用户名, 用户ID) —— ID 永久不变，POC 已实测
 ]
 IG_WEB_APP_ID = "936619743392459"
 
-# ---- Instagram Post/Reel（instagrapi 私有 API，与 Story 源分离） ----------
-# 频率：60 分钟源（CHECK_INTERVAL_TICKS = 12）；失败后另见 COOLDOWN_*。
+# ---- Instagram Post/Reel 免账号通道（ig_anon，2026-10 实测接线） -----------
+# 原理与实测数据见 sources/ig_anon.py 与 poc/ig_anonymous_probe.py：
+# 匿名主页 HTML（instaloader PR #2782 路线）+ 免费代理猎取，零账号零 cookie。
+# 账号复用 IG_ACCOUNTS；频率与静默见下方 CHECK_INTERVAL_* / QUIET_HOURS_JST。
+
+# ---- Instagram Post/Reel（instagrapi 私有 API，已退役为兜底） ----------------
+# 2026-10 起由 ig_anon 免账号通道替代（main.build_sources 已换）；本段保留，
+# 重新启用 = build_sources 换回 ig_post.source() 并恢复 COOLDOWN/CHECK 配置。
 IG_POST_ACCOUNTS = [  # (用户名, 用户ID)
     ("miyamoto_doppo", 10584438821),
     ("elephantsinc_official", 66821998949),
@@ -117,7 +123,7 @@ NOTIFY_PREFIX = {  # source_key → 前缀
     f"ig_post_{IG_ACCOUNTS[2][0]}": NOTIFY_PREFIX_MIYAMOTO,
     f"ig_post_{IG_ACCOUNTS[1][0]}": NOTIFY_PREFIX_ELEPHANTS,
 }
-# ig_story 三账号共用一个 key，按 account_name 区分（handle 不带 @）
+# ig_story / ig_anon 三账号共用一个 key，按 account_name 区分（handle 不带 @）
 NOTIFY_PREFIX_BY_ACCOUNT = {
     IG_ACCOUNTS[0][0]: NOTIFY_PREFIX_MIYAMOTO,
     IG_ACCOUNTS[2][0]: NOTIFY_PREFIX_MIYAMOTO,
@@ -127,7 +133,7 @@ NOTIFY_PREFIX_BY_ACCOUNT = {
 
 def notify_prefix(source_key: str, account_name: str = "") -> str:
     """某条 Update 的邮件主题前缀。未登记的源回退 NOTIFY_TITLE_PREFIX 环境变量。"""
-    if source_key == "ig_story":
+    if source_key in ("ig_story", "ig_anon"):
         name = (account_name or "").lstrip("@")
         if name in NOTIFY_PREFIX_BY_ACCOUNT:
             return NOTIFY_PREFIX_BY_ACCOUNT[name]
@@ -141,7 +147,8 @@ def notify_prefix(source_key: str, account_name: str = "") -> str:
 #   5 分钟源每轮查，10 分钟源每 2 轮查，15 分钟源每 3 轮查，30 分钟源每 6 轮查。
 CHECK_INTERVAL_MINUTES = {  # 保留：人类可读的期望 cadence（实际门控用下面的轮次）
     "ig_story": 10,
-    "ig_post": 60,  # 私有 API：60 分钟一查，降低被 IG 限流/封禁的风险
+    "ig_anon": 20,  # 免账号通道：零账号风险，可比 ig_post 时代（60 分钟）更勤
+    "ig_post": 60,  # [兜底] 私有 API：60 分钟一查，降低被 IG 限流/封禁的风险
     "x": 5,
     "x_paonews_info": 15,
     "x_hmnews_info": 15,
@@ -157,7 +164,8 @@ DEFAULT_CHECK_INTERVAL_MINUTES = 5  # 未知新源的兜底：保持最高频率
 
 CHECK_INTERVAL_TICKS = {  # 实际门控：每 N 轮查一次
     "ig_story": 2,  # ≈10 分钟（私有 API 会话：降频降低风控压力）
-    "ig_post": 12,  # ≈60 分钟；失败后由下面的 COOLDOWN_* 进一步降频
+    "ig_anon": 4,   # ≈20 分钟（免账号通道；单轮空手=池子无可用出口，由连续失败报警兜底）
+    "ig_post": 12,  # [兜底] ≈60 分钟；失败后由下面的 COOLDOWN_* 进一步降频
     "x": 1,  # 主号 @miyamoto_hiroji：每轮查，不受次要号影响
     "x_paonews_info": 3,  # 次要 X 号：每 3 轮（≈15 分钟）查
     "x_hmnews_info": 3,
@@ -212,6 +220,7 @@ JST = timezone(timedelta(hours=9))  # 监测对象主要在日本活动
 
 QUIET_HOURS_JST = {
     "ig_story": (2, 7),  # 日本时间凌晨 2:00–7:00 休息不查询
+    "ig_anon": (2, 7),   # 与 story 同款静默：posts 不是 24 小时消失的内容，夜间停查省 25% 周期
 }
 
 

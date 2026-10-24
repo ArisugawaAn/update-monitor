@@ -49,8 +49,8 @@ def sources_catalog() -> list[dict]:
 
     for name, _uid in config.IG_ACCOUNTS:            # 三账号共用 key，按账号区分
         add("ig_story", "instagram", name, "Instagram Story")
-    for name, _uid in config.IG_POST_ACCOUNTS:
-        add(f"ig_post_{name}", "instagram", name, "Instagram Post/Reel")
+    for name, _uid in config.IG_ACCOUNTS:            # ig_anon 免账号通道（2026-10 起，替代 ig_post）
+        add("ig_anon", "instagram", name, "Instagram Post/Reel")
     for handle in config.X_USERS:                    # 主号 key 固定为 "x"
         add("x" if handle == config.X_USERS[0] else f"x_{handle}",
             "x", f"@{handle}", "X")

@@ -1054,6 +1054,84 @@ def test_ig_post_cadence_every_12_rounds(monkeypatch):
     assert config.check_interval_ticks("ig_post") == 12
 
 
+# ---------------- ig_anon 免账号通道（匿名主页解析 + 频率/前缀/代理缓存） ----------------
+
+_IG_ANON_DATA = {
+    "xig_user_by_username": {
+        "pk": "10584438821", "username": "miyamoto_doppo",
+        "polaris_ordered_timeline_connection": {
+            "edges": [
+                {"node": {"code": "CodeReel01", "product_type": "clips",
+                          "caption": {"text": "リール正文"},
+                          "display_uri": "http://cdn/r.jpg"}},
+                {"node": {"code": "CodePost02", "product_type": "carousel_container",
+                          "caption": "图集正文",
+                          "display_uri": "http://cdn/p.jpg"}},
+            ],
+            "page_info": {"has_next_page": True}}}}
+_IG_ANON_HTML = ('<html><script type="application/json" data-sjs>'
+                 + json.dumps({"require": [
+                     ["RelayPrefetchedStreamCache", None,
+                      {"__bbox": {"result": {"data": _IG_ANON_DATA}}}]]})
+                 + '</script></html>')
+
+
+def test_ig_anon_parse_page_extracts_timeline():
+    from monitor.sources import ig_anon
+    user, edges = ig_anon._parse_page(_IG_ANON_HTML, 10584438821)
+    assert str(user["pk"]) == "10584438821"
+    assert [e["code"] for e in edges] == ["CodeReel01", "CodePost02"]
+
+
+def test_ig_anon_parse_page_rejects_pk_mismatch():
+    """pk 与目标不符 = 出口被污染/给错人 → 视为出口死亡，交由换手逻辑处理。"""
+    from monitor.sources import ig_anon
+    with pytest.raises(ig_anon._Dead):
+        ig_anon._parse_page(_IG_ANON_HTML, 99999999)
+
+
+def test_ig_anon_emit_builds_updates():
+    from monitor.sources import ig_anon
+    user, edges = ig_anon._parse_page(_IG_ANON_HTML, 10584438821)
+    s = SimpleNamespace(cookies=SimpleNamespace(get=lambda *a, **k: None))  # 无 csrf → 跳过详情
+    ups = ig_anon._emit("miyamoto_doppo", 10584438821, (user, edges), s)
+    assert [u.external_id for u in ups] == ["CodeReel01", "CodePost02"]
+    assert ups[0].content_type == "reel" and ups[1].content_type == "post"
+    assert ups[0].url == "https://www.instagram.com/reel/CodeReel01/"
+    assert ups[1].url == "https://www.instagram.com/p/CodePost02/"
+    assert ups[0].title == "リール正文" and ups[1].title == "图集正文"
+    assert ups[0].media_urls == ["http://cdn/r.jpg"]
+    assert all(u.published_at is None for u in ups)  # 详情未取到时不造时间
+    assert all(u.source_key == "ig_anon" and u.account_name == "@miyamoto_doppo"
+               for u in ups)
+
+
+def test_ig_anon_cadence_quiet_and_prefix():
+    from monitor import config
+    assert config.check_interval_ticks("ig_anon") == 4   # ≈20 分钟
+    assert config.check_interval_minutes("ig_anon") == 20
+    assert config.quiet_hours_jst("ig_anon") == (2, 7)   # 夜间静默与 story 同款
+    assert config.cooldown_ticks("ig_anon", "boom") == 0  # 匿名源无会话，不进冷却
+    assert config.notify_prefix("ig_anon", "miyamoto_doppo") == "宮本浩次"
+    assert config.notify_prefix("ig_anon", "@elephantsinc_official") == "elephants"
+    assert config.notify_prefix("ig_anon", "h.m.staff") == "宮本浩次"
+
+
+def test_ig_anon_proxy_cache_lifecycle(tmp_path):
+    """已知好代理缓存：touch 记录、连续 3 次失败剔除、写入注入的 state（持久化）。"""
+    from monitor.sources import ig_anon
+    state: dict = {"sources": {}}
+    ig_anon.set_state(state)
+    ig_anon._cache_touch("1.2.3.4:80")
+    assert ig_anon._cache_sorted() == ["1.2.3.4:80"]
+    for _ in range(ig_anon._CACHE_FAIL_DROP):
+        ig_anon._cache_fail("1.2.3.4:80")
+    assert ig_anon._cache_sorted() == []
+    assert state["ig_anon_proxies"] == []  # 直接写进注入的 state → 随 monitor_state.json 持久化
+    ig_anon._STATE = None  # 清理：不影响其他测试
+    ig_anon._MEM_CACHE.clear()
+
+
 # ---------------- 邮件主题前缀（按来源区分 人物/团体） ----------------
 
 def test_notify_prefix_by_source_key():
@@ -1412,7 +1490,7 @@ def test_sources_catalog_covers_all_sources():
            for c in ekdb_push.sources_catalog()}
     for name, _uid in config.IG_ACCOUNTS:
         assert f"ig_story|{name}" in cat
-    assert "ig_post_miyamoto_doppo|miyamoto_doppo" in cat
+        assert f"ig_anon|{name}" in cat  # 免账号通道（2026-10 起，替代 ig_post）
     assert "x|@miyamoto_hiroji" in cat
     assert "x_paonews_info|@paonews_info" in cat
     assert "x_elekashi_ofcl|@elekashi_ofcl" in cat
