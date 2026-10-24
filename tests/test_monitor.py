@@ -1503,23 +1503,40 @@ def test_notify_prefix_fallback_env(monkeypatch):
     assert config.notify_prefix("unknown_source") == "宮本浩次"
 
 
+def _mk_subject_update(key, name, title="新推文", ctype="tweet", platform="x"):
+    from datetime import datetime, timezone
+    return Update(source_key=key, platform=platform, account_name=name,
+                  content_type=ctype, external_id="1", title=title,
+                  detected_at=datetime(2026, 10, 24, 8, 5, tzinfo=timezone.utc))
+
+
 def test_email_subject_uses_per_source_prefix():
-    """端到端：Update → _render() 主题前缀按来源区分，平台标签不变。"""
+    """主题统一格式：【人物前缀｜平台类型】账号：单行预览（MM-DD HH:MM UTC）。"""
     from monitor.notification import email
+    assert email._render(_mk_subject_update("x", "@miyamoto_hiroji"))[0] ==         "【宮本浩次｜X】@miyamoto_hiroji：新推文（10-24 08:05 UTC）"
+    assert email._render(_mk_subject_update("x_paonews_info", "@paonews_info"))[0] ==         "【エレカシ｜X】@paonews_info：新推文（10-24 08:05 UTC）"
+    assert email._render(_mk_subject_update("x_elekashi_ofcl", "@elekashi_ofcl"))[0] ==         "【エレカシ｜X】@elekashi_ofcl：新推文（10-24 08:05 UTC）"
+    assert email._render(_mk_subject_update("x_hmnews_info", "@hmnews_info"))[0] ==         "【宮本浩次｜X】@hmnews_info：新推文（10-24 08:05 UTC）"
 
-    def mk(key, name):
-        return Update(source_key=key, platform="x", account_name=name,
-                      content_type="tweet", external_id="1", title="新推文")
+    story = _mk_subject_update("ig_story", "elephantsinc_official",
+                               title=None, ctype="story", platform="instagram")
+    assert email._render(story)[0] ==         "【elephants｜Instagram Story】elephantsinc_official：发布了新 Story（10-24 08:05 UTC）"
 
-    assert email._render(mk("x", "@miyamoto_hiroji"))[0] == "【宮本浩次｜X】新推文"
-    assert email._render(mk("x_paonews_info", "@paonews_info"))[0] == "【エレカシ｜X】新推文"
-    assert email._render(mk("x_elekashi_ofcl", "@elekashi_ofcl"))[0] == "【エレカシ｜X】新推文"
-    assert email._render(mk("x_hmnews_info", "@hmnews_info"))[0] == "【宮本浩次｜X】新推文"
 
-    story = Update(source_key="ig_story", platform="instagram",
-                   account_name="elephantsinc_official", content_type="story",
-                   external_id="pk1")
-    assert email._render(story)[0].startswith("【elephants｜Instagram Story】")
+def test_email_subject_single_line_ellipsis_and_no_title():
+    """caption 换行压平成单行；超长截断加省略号；无 title 回退 text。"""
+    from monitor.notification import email
+    u = _mk_subject_update("ig_anon", "@miyamoto_doppo",
+                           title="第一行" + chr(10) + "第二行" + chr(9) + "x" * 50,
+                           ctype="post", platform="instagram")
+    subj = email._render(u)[0]
+    assert chr(10) not in subj and chr(9) not in subj
+    assert "第一行 第二行" in subj and subj.endswith("…（10-24 08:05 UTC）")
+
+    u2 = _mk_subject_update("ig_anon", "@miyamoto_doppo", title=None,
+                            ctype="post", platform="instagram")
+    u2.text = "正文预览"
+    assert email._render(u2)[0].endswith("@miyamoto_doppo：正文预览（10-24 08:05 UTC）")
 
 
 # ---------------- ekdb 分发推送（unpushed 队列 + 幂等重推 + 源目录同步） ----------------

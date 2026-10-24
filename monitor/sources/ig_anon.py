@@ -333,7 +333,7 @@ def _emit(name: str, uid: int | str, user_edges: tuple[dict, list],
             # 与 App 显示一致）→ 追加新条目会更新该值 → 新 external_id → 再报一次，
             # 即"在场期间每新增一条都会收到更新提醒"。条数本身匿名不可见（在登录态
             # tray 的 media_count 里，由 ig_story cookie 通道提供）。
-            title=f"Story 在场：最新一条约 {age_min} 分钟前（{started:%m-%d %H:%M} UTC）",
+            title=f"Story 在场（最新一条约 {age_min} 分钟前）",
             url=f"https://www.instagram.com/stories/{name}/",
             published_at=started))
     for node in edges:
