@@ -321,16 +321,173 @@ def probe_profile_page() -> list:
     return results
 
 
+_POOL_CAP = 600
+_POOL_WORKERS = 50
+_POOL_SOURCES = [
+    ("TheSpeedX", "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt"),
+    ("monosans", "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt"),
+    ("proxifly", "https://raw.githubusercontent.com/proxifly/free-proxy-list/main/proxies/protocols/http/data.txt"),
+]
+_URL_PROXY_SERVICES = [
+    ("cors.workers.dev", "https://test.cors.workers.dev/?{url}"),
+    ("allorigins", "https://api.allorigins.win/raw?url={url}"),
+    ("corsproxy.io", "https://corsproxy.io/?url={url}"),
+    ("codetabs", "https://api.codetabs.com/v1/proxy?quest={url}"),
+]
+
+
+def probe_url_proxies() -> list:
+    """方法 H：公共 URL 转发服务（跑在 CF Workers 等非 Azure 出口）能否带回内嵌数据。
+
+    若任一服务成功，= 该云出口能过 IG 的 IP 墙 → "免费自建 CF Worker" 有据可依。
+    这些服务不透传 Sec-Fetch-* 头，成功率存疑——实测说话。纯匿名，每服务一次。
+    """
+    import json
+    import re
+    from urllib.parse import quote
+
+    import requests
+    out = []
+    for name, tpl in _URL_PROXY_SERVICES:
+        try:
+            r = requests.get(tpl.format(url=quote(f"https://www.instagram.com/{USERNAME.lower()}/",
+                                                  safe="")),
+                             timeout=25, headers={"User-Agent": "Mozilla/5.0"})
+            hit = False
+            if "xig_user_by_username" in r.text:
+                for script in re.finditer(
+                        r'<script type="application/json"[^>]*>(.*?)</script>',
+                        r.text, re.DOTALL):
+                    try:
+                        for data in _embedded_query_data(json.loads(script.group(1))):
+                            if str((data.get("xig_user_by_username") or {}).get("pk")) == USERID:
+                                hit = True
+                                break
+                    except json.decoder.JSONDecodeError:
+                        pass
+                    if hit:
+                        break
+            print(f"  {name}: HTTP {r.status_code} bytes={len(r.text)} embedded={hit}",
+                  flush=True)
+            out.append(f"{name}:{'OK' if hit else f'http_{r.status_code}'}")
+        except Exception as e:
+            print(f"  {name}: FAIL {type(e).__name__}: {str(e)[:90]}", flush=True)
+            out.append(f"{name}:fail")
+    return out
+
+
+def probe_free_pool() -> list:
+    """方法 G：免费公开代理池 × 匿名主页路线（PR #2782）实测。
+
+    回答"不买代理、家里机器不常开，免费出口能否过 IG 的 IP 墙"。
+    纪律：纯匿名零账号；每个代理只碰一次；单请求超时 5s+10s。
+    成功判据：HTTP 200 且解析出目标 pk 的时间线（≥1 条 edges）——
+    免费代理可能伪造/污染响应，必须验证数据本体，不认状态码。
+    成功者用 ip-api 分类出口性质（residential / hosting / mobile）。
+    """
+    import json
+    import random
+    import re as _re
+    from concurrent.futures import ThreadPoolExecutor
+
+    import requests
+
+    def fetch_pool() -> list:
+        found: list = []
+        for name, url in _POOL_SOURCES:
+            try:
+                r = requests.get(url, timeout=20)
+                if r.status_code != 200:
+                    print(f"  源 {name}: HTTP {r.status_code}", flush=True)
+                    continue
+                ips = []
+                for ln in r.text.splitlines():
+                    ln = ln.strip().split(",")[0]
+                    if ln.startswith("http://"):
+                        ln = ln[7:]
+                    if _re.fullmatch(r"\d+\.\d+\.\d+\.\d+:\d+", ln):
+                        ips.append(ln)
+                print(f"  源 {name}: {len(ips)} 条 http 代理", flush=True)
+                found.extend(ips)
+            except Exception as e:
+                print(f"  源 {name}: {type(e).__name__}: {str(e)[:80]}", flush=True)
+        uniq = list(dict.fromkeys(found))
+        random.shuffle(uniq)
+        return uniq[:_POOL_CAP]
+
+    def check(proxy: str):
+        try:
+            r = requests.get(f"https://www.instagram.com/{USERNAME.lower()}/",
+                             headers={"Accept": "text/html",
+                                      "Sec-Fetch-Dest": "document",
+                                      "Sec-Fetch-Mode": "navigate",
+                                      "Sec-Fetch-Site": "none",
+                                      "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
+                                                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                                    "Chrome/142.0.0.0 Safari/537.36"},
+                             proxies={"http": f"http://{proxy}", "https": f"http://{proxy}"},
+                             timeout=(5, 10), allow_redirects=False)
+        except Exception:
+            return proxy, "err", 0
+        if r.status_code != 200:
+            return proxy, f"http_{r.status_code}", 0
+        try:
+            for script in _re.finditer(
+                    r'<script type="application/json"[^>]*>(.*?)</script>',
+                    r.text, _re.DOTALL):
+                try:
+                    for data in _embedded_query_data(json.loads(script.group(1))):
+                        u = data.get("xig_user_by_username") or {}
+                        if str(u.get("pk")) == USERID:
+                            n = len(((u.get("polaris_ordered_timeline_connection") or {})
+                                     .get("edges")) or [])
+                            if n:
+                                return proxy, "ok", n
+                except json.decoder.JSONDecodeError:
+                    pass
+        except Exception:
+            pass
+        return proxy, "no_data", len(r.text)
+
+    pool = fetch_pool()
+    print(f"  池子: {len(pool)} 个候选，{_POOL_WORKERS} 并发，每个只碰一次", flush=True)
+    results = []
+    with ThreadPoolExecutor(max_workers=_POOL_WORKERS) as ex:
+        for res in ex.map(check, pool):
+            results.append(res)
+    stats: dict = {}
+    for _, s, _ in results:
+        stats[s] = stats.get(s, 0) + 1
+    oks = [(p, e) for p, s, e in results if s == "ok"]
+    print(f"  统计: {stats}", flush=True)
+    for p, edges in oks[:10]:
+        try:
+            info = requests.get(f"http://ip-api.com/json/{p.split(':')[0]}"
+                                "?fields=isp,org,mobile,proxy,hosting", timeout=8).json()
+            print(f"  WORKING {p} edges={edges} isp={info.get('isp')} "
+                  f"hosting={info.get('hosting')} mobile={info.get('mobile')}", flush=True)
+        except Exception:
+            print(f"  WORKING {p} edges={edges}", flush=True)
+    return [p for p, _ in oks]
+
+
 def main():
-    print(f"IG anonymous probe v6: userid={USERID} attempts={ATTEMPTS}", flush=True)
+    print(f"IG anonymous probe v7: userid={USERID} attempts={ATTEMPTS}", flush=True)
     print("===== E. anonymous feed/user/{id} (PR #2722 复刻，对照：上游已 401) =====", flush=True)
     re_ = probe_feed_anon()
     time.sleep(GAP)
     print("===== F. anonymous profile-page HTML (PR #2782 复刻，核心验证) =====", flush=True)
     rf = probe_profile_page()
+    time.sleep(GAP)
+    print("===== H. public URL-proxy services (CF Workers 等出口) =====", flush=True)
+    rh = probe_url_proxies()
+    print("===== G. free proxy pool × profile-page (免费出口实测) =====", flush=True)
+    rg = probe_free_pool()
     print("===== SUMMARY =====", flush=True)
     print(f"E feed-anon: {re_}", flush=True)
     print(f"F profile-page: {rf}", flush=True)
+    print(f"H url-proxy: {rh}", flush=True)
+    print(f"G free-pool: working={len(rg)} {rg[:8]}", flush=True)
 
 
 if __name__ == "__main__":
