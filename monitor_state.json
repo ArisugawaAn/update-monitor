@@ -105,8 +105,8 @@
     "2113463022815723786"
    ],
    "baselined": true,
-   "last_checked_tick": 11843,
-   "last_checked_at": 1792926341.625254,
+   "last_checked_tick": 11844,
+   "last_checked_at": 1792926645.929363,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -130,18 +130,22 @@
     "08QiRh9ffTg",
     "AXhH0Qav2Po",
     "imUTWunRgbA",
-    "fqOAzNo2ZCk"
+    "fqOAzNo2ZCk",
+    "RdtB4dgbfV0",
+    "SLZCAXzrZQo"
    ],
    "notified": [
     "BWwEKJkUMPI",
     "08QiRh9ffTg",
     "AXhH0Qav2Po",
     "imUTWunRgbA",
-    "fqOAzNo2ZCk"
+    "fqOAzNo2ZCk",
+    "RdtB4dgbfV0",
+    "SLZCAXzrZQo"
    ],
    "baselined": true,
-   "last_checked_tick": 11842,
-   "last_checked_at": 1792926047.748518,
+   "last_checked_tick": 11844,
+   "last_checked_at": 1792926645.929363,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -164,8 +168,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 11842,
-   "last_checked_at": 1792926047.748518,
+   "last_checked_tick": 11844,
+   "last_checked_at": 1792926645.929363,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -193,8 +197,8 @@
     "count-15"
    ],
    "baselined": true,
-   "last_checked_tick": 11842,
-   "last_checked_at": 1792926047.748518,
+   "last_checked_tick": 11844,
+   "last_checked_at": 1792926645.929363,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -287,8 +291,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 11843,
-   "last_checked_at": 1792926341.625254,
+   "last_checked_tick": 11844,
+   "last_checked_at": 1792926645.929363,
    "fail_streak": 0
   },
   "site_ek": {
@@ -465,12 +469,12 @@
     "story-1792823116"
    ],
    "baselined": true,
-   "last_checked_tick": 11842,
-   "last_checked_at": 1792926047.748518,
+   "last_checked_tick": 11844,
+   "last_checked_at": 1792926645.929363,
    "fail_streak": 0
   }
  },
- "tick": 11843,
+ "tick": 11844,
  "last_sweep_hour": "2026-10-25T11",
  "ig_anon_proxies": [
   {
@@ -510,7 +514,7 @@
   },
   {
    "proxy": "5.129.254.215:8888",
-   "ok_at": 1792926056.5423987,
+   "ok_at": 1792926653.929749,
    "fails": 0
   }
  ],
