@@ -4,6 +4,15 @@ name: ig-anonymous-probe
 # 仅手动触发，与 monitor 主流程完全无关（不跑监控、不碰状态、不发通知）。
 on:
   workflow_dispatch:
+    inputs:
+      account:
+        description: "IG username to probe (see monitor/config.py)"
+        required: false
+        default: ""
+      userid:
+        description: "IG numeric user id"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -29,4 +38,4 @@ jobs:
       - name: Probe (story-cookie web + anonymous graphql timeline)
         env:
           IG_COOKIE: ${{ secrets.IG_COOKIE }}
-        run: python poc/ig_anonymous_probe.py miyamoto_doppo 10584438821 2
+        run: python poc/ig_anonymous_probe.py "${{ inputs.account }}" "${{ inputs.userid }}" 2

@@ -1,7 +1,19 @@
+# 凭据/会话：绝不入库（session-ig-post.json 等含完整会话，泄露=账号被接管）
+ig_cookies.txt
+*cookies*.txt
+session-*
+*.session
+.env
+
+# 本地运行/调试产物
+watch_state.json
+*.log
+push_err.txt
+*.diff
+*.patch
+
 __pycache__/
 *.pyc
 .venv/
-ig_cookies.txt
-session-*
-watch_state.json
-*.log
+.DS_Store
+Thumbs.db
