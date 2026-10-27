@@ -30,8 +30,8 @@
     "8c79e1b819305edd"
    ],
    "baselined": true,
-   "last_checked_tick": 12312,
-   "last_checked_at": 1793066446.562818,
+   "last_checked_tick": 12315,
+   "last_checked_at": 1793067348.003417,
    "fail_streak": 0
   },
   "ig_story": {
@@ -107,8 +107,8 @@
     "2114601220501647802"
    ],
    "baselined": true,
-   "last_checked_tick": 12314,
-   "last_checked_at": 1793067042.58034,
+   "last_checked_tick": 12315,
+   "last_checked_at": 1793067348.003417,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -223,8 +223,8 @@
     "2106218675883888981"
    ],
    "baselined": true,
-   "last_checked_tick": 12312,
-   "last_checked_at": 1793066446.562818,
+   "last_checked_tick": 12315,
+   "last_checked_at": 1793067348.003417,
    "fail_streak": 0
   },
   "x_hmnews_info": {
@@ -255,8 +255,8 @@
     "2104923527778636046"
    ],
    "baselined": true,
-   "last_checked_tick": 12312,
-   "last_checked_at": 1793066446.562818,
+   "last_checked_tick": 12315,
+   "last_checked_at": 1793067348.003417,
    "fail_streak": 0
   },
   "x_elekashi_ofcl": {
@@ -293,8 +293,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 12314,
-   "last_checked_at": 1793067042.58034,
+   "last_checked_tick": 12315,
+   "last_checked_at": 1793067348.003417,
    "fail_streak": 0
   },
   "site_ek": {
@@ -325,8 +325,8 @@
     "91ee995979bebb7b"
    ],
    "baselined": true,
-   "last_checked_tick": 12312,
-   "last_checked_at": 1793066446.562818,
+   "last_checked_tick": 12315,
+   "last_checked_at": 1793067348.003417,
    "fail_streak": 0
   },
   "site_ekfc": {
@@ -361,9 +361,9 @@
     "424"
    ],
    "baselined": true,
-   "last_checked_tick": 12312,
-   "last_checked_at": 1793066446.562818,
-   "fail_streak": 555
+   "last_checked_tick": 12315,
+   "last_checked_at": 1793067348.003417,
+   "fail_streak": 556
   },
   "site_elephantsinc": {
    "seen": [
@@ -374,8 +374,8 @@
     "news202609"
    ],
    "baselined": true,
-   "last_checked_tick": 12312,
-   "last_checked_at": 1793066446.562818,
+   "last_checked_tick": 12315,
+   "last_checked_at": 1793067348.003417,
    "fail_streak": 0
   },
   "ig_post": {
@@ -478,7 +478,7 @@
    "fail_streak": 0
   }
  },
- "tick": 12314,
+ "tick": 12315,
  "last_sweep_hour": "2026-10-27T02",
  "ig_anon_proxies": [
   {
