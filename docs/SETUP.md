@@ -96,7 +96,7 @@ missing, instead of silently reporting zero stories — the 2026-09-24/27 outage
 (a dead cookie looking "healthy" for 3 days) is exactly what this prevents.
 
 Quiet hours + cookie rotation (story source): `ig_story` sends no requests
-between 02:00–07:00 JST (`QUIET_HOURS_JST` in `monitor/config.py`; skips don't
+between 03:00–07:00 JST (`QUIET_HOURS_JST` in `monitor/config.py`; skips don't
 count as checks and polling resumes on the first tick after 07:00), and the
 `IG_COOKIE` secret may hold **multiple** cookies (one per line, or separated by
 `|||`) — every 10-minute window rotates the starting cookie so each account is

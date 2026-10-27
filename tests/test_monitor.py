@@ -1144,7 +1144,7 @@ def test_ig_anon_cadence_quiet_and_prefix():
     from monitor import config
     assert config.check_interval_ticks("ig_anon") == 2   # ≈10 分钟
     assert config.check_interval_minutes("ig_anon") == 10
-    assert config.quiet_hours_jst("ig_anon") == (2, 7)   # 夜间静默与 story 同款
+    assert config.quiet_hours_jst("ig_anon") == (3, 7)   # 夜间静默与 story 同款
     assert config.cooldown_ticks("ig_anon", "boom") == 0  # 匿名源无会话，不进冷却
     assert config.notify_prefix("ig_anon", "miyamoto_doppo") == "宮本浩次"
     assert config.notify_prefix("ig_anon", "@elephantsinc_official") == "elephants"
@@ -1318,7 +1318,7 @@ def test_config_ig_cookies_parsing(monkeypatch):
 # ---------------- 静默时段（日本时间） ----------------
 
 def test_quiet_hours_skips_ig_story_at_jst_night(monkeypatch):
-    """JST 02:00–07:00：ig_story 跳过（零请求、不推进轮次、不计成败）。"""
+    """JST 03:00–07:00：ig_story 跳过（零请求、不推进轮次、不计成败）。"""
     import datetime as dt
     from monitor import config, main as m
     _no_save(monkeypatch)

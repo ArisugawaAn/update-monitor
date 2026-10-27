@@ -219,8 +219,8 @@ def check_interval_ticks(key: str) -> int:
 JST = timezone(timedelta(hours=9))  # 监测对象主要在日本活动
 
 QUIET_HOURS_JST = {
-    "ig_story": (2, 7),  # 日本时间凌晨 2:00–7:00 休息不查询
-    "ig_anon": (2, 7),   # 与 story 同款静默：posts 不是 24 小时消失的内容，夜间停查省 25% 周期
+    "ig_story": (3, 7),  # 日本时间凌晨 3:00–7:00 休息不查询
+    "ig_anon": (3, 7),   # 与 story 同款静默：posts 不是 24 小时消失的内容，夜间停查省 ~17% 周期
 }
 
 
