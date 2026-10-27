@@ -30,8 +30,8 @@
     "8c79e1b819305edd"
    ],
    "baselined": true,
-   "last_checked_tick": 12370,
-   "last_checked_at": 1793083546.179156,
+   "last_checked_tick": 12373,
+   "last_checked_at": 1793084445.592856,
    "fail_streak": 0
   },
   "ig_story": {
@@ -107,8 +107,8 @@
     "2114601220501647802"
    ],
    "baselined": true,
-   "last_checked_tick": 12372,
-   "last_checked_at": 1793084143.937261,
+   "last_checked_tick": 12373,
+   "last_checked_at": 1793084445.592856,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -146,8 +146,8 @@
     "SLZCAXzrZQo"
    ],
    "baselined": true,
-   "last_checked_tick": 12371,
-   "last_checked_at": 1793083845.659732,
+   "last_checked_tick": 12373,
+   "last_checked_at": 1793084445.592856,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -170,8 +170,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 12371,
-   "last_checked_at": 1793083845.659732,
+   "last_checked_tick": 12373,
+   "last_checked_at": 1793084445.592856,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -199,8 +199,8 @@
     "count-15"
    ],
    "baselined": true,
-   "last_checked_tick": 12371,
-   "last_checked_at": 1793083845.659732,
+   "last_checked_tick": 12373,
+   "last_checked_at": 1793084445.592856,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -223,8 +223,8 @@
     "2106218675883888981"
    ],
    "baselined": true,
-   "last_checked_tick": 12370,
-   "last_checked_at": 1793083546.179156,
+   "last_checked_tick": 12373,
+   "last_checked_at": 1793084445.592856,
    "fail_streak": 0
   },
   "x_hmnews_info": {
@@ -255,8 +255,8 @@
     "2104923527778636046"
    ],
    "baselined": true,
-   "last_checked_tick": 12370,
-   "last_checked_at": 1793083546.179156,
+   "last_checked_tick": 12373,
+   "last_checked_at": 1793084445.592856,
    "fail_streak": 0
   },
   "x_elekashi_ofcl": {
@@ -293,8 +293,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 12372,
-   "last_checked_at": 1793084143.937261,
+   "last_checked_tick": 12373,
+   "last_checked_at": 1793084445.592856,
    "fail_streak": 0
   },
   "site_ek": {
@@ -325,8 +325,8 @@
     "91ee995979bebb7b"
    ],
    "baselined": true,
-   "last_checked_tick": 12370,
-   "last_checked_at": 1793083546.179156,
+   "last_checked_tick": 12373,
+   "last_checked_at": 1793084445.592856,
    "fail_streak": 0
   },
   "site_ekfc": {
@@ -361,9 +361,9 @@
     "424"
    ],
    "baselined": true,
-   "last_checked_tick": 12370,
-   "last_checked_at": 1793083546.179156,
-   "fail_streak": 575
+   "last_checked_tick": 12373,
+   "last_checked_at": 1793084445.592856,
+   "fail_streak": 576
   },
   "site_elephantsinc": {
    "seen": [
@@ -374,8 +374,8 @@
     "news202609"
    ],
    "baselined": true,
-   "last_checked_tick": 12370,
-   "last_checked_at": 1793083546.179156,
+   "last_checked_tick": 12373,
+   "last_checked_at": 1793084445.592856,
    "fail_streak": 0
   },
   "ig_post": {
@@ -473,17 +473,17 @@
     "story-1792945088"
    ],
    "baselined": true,
-   "last_checked_tick": 12371,
-   "last_checked_at": 1793083845.659732,
+   "last_checked_tick": 12373,
+   "last_checked_at": 1793084445.592856,
    "fail_streak": 0
   }
  },
- "tick": 12372,
- "last_sweep_hour": "2026-10-27T06",
+ "tick": 12373,
+ "last_sweep_hour": "2026-10-27T07",
  "ig_anon_proxies": [
   {
    "proxy": "82.152.138.127:999",
-   "ok_at": 1793083850.6978934,
+   "ok_at": 1793084451.296463,
    "fails": 0
   },
   {
