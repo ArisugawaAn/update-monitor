@@ -107,8 +107,8 @@
     "2114601220501647802"
    ],
    "baselined": true,
-   "last_checked_tick": 13546,
-   "last_checked_at": 1793432129.961792,
+   "last_checked_tick": 13547,
+   "last_checked_at": 1793432424.729397,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -146,8 +146,8 @@
     "SLZCAXzrZQo"
    ],
    "baselined": true,
-   "last_checked_tick": 13545,
-   "last_checked_at": 1793431827.019518,
+   "last_checked_tick": 13547,
+   "last_checked_at": 1793432424.729397,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -170,8 +170,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 13545,
-   "last_checked_at": 1793431827.019518,
+   "last_checked_tick": 13547,
+   "last_checked_at": 1793432424.729397,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -199,8 +199,8 @@
     "count-15"
    ],
    "baselined": true,
-   "last_checked_tick": 13545,
-   "last_checked_at": 1793431827.019518,
+   "last_checked_tick": 13547,
+   "last_checked_at": 1793432424.729397,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -293,8 +293,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 13546,
-   "last_checked_at": 1793432129.961792,
+   "last_checked_tick": 13547,
+   "last_checked_at": 1793432424.729397,
    "fail_streak": 0
   },
   "site_ek": {
@@ -475,12 +475,12 @@
     "story-1792945088"
    ],
    "baselined": true,
-   "last_checked_tick": 13545,
-   "last_checked_at": 1793431827.019518,
+   "last_checked_tick": 13547,
+   "last_checked_at": 1793432424.729397,
    "fail_streak": 0
   }
  },
- "tick": 13546,
+ "tick": 13547,
  "last_sweep_hour": "2026-10-31T07",
  "ig_anon_proxies": [
   {
@@ -501,7 +501,7 @@
   {
    "proxy": "185.191.239.248:3128",
    "ok_at": 1793431846.0260358,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "201.71.2.232:999",
@@ -515,7 +515,7 @@
   },
   {
    "proxy": "103.172.42.37:1111",
-   "ok_at": 1793431301.1699464,
+   "ok_at": 1793432440.6695642,
    "fails": 0
   }
  ],
