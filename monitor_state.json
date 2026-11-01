@@ -30,8 +30,8 @@
     "8c79e1b819305edd"
    ],
    "baselined": true,
-   "last_checked_tick": 13785,
-   "last_checked_at": 1793502925.572273,
+   "last_checked_tick": 13788,
+   "last_checked_at": 1793503828.833204,
    "fail_streak": 0
   },
   "ig_story": {
@@ -109,8 +109,8 @@
     "2116486915247755719"
    ],
    "baselined": true,
-   "last_checked_tick": 13787,
-   "last_checked_at": 1793503525.893029,
+   "last_checked_tick": 13788,
+   "last_checked_at": 1793503828.833204,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -148,8 +148,8 @@
     "SLZCAXzrZQo"
    ],
    "baselined": true,
-   "last_checked_tick": 13786,
-   "last_checked_at": 1793503223.09915,
+   "last_checked_tick": 13788,
+   "last_checked_at": 1793503828.833204,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -172,8 +172,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 13786,
-   "last_checked_at": 1793503223.09915,
+   "last_checked_tick": 13788,
+   "last_checked_at": 1793503828.833204,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -201,8 +201,8 @@
     "count-15"
    ],
    "baselined": true,
-   "last_checked_tick": 13786,
-   "last_checked_at": 1793503223.09915,
+   "last_checked_tick": 13788,
+   "last_checked_at": 1793503828.833204,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -225,8 +225,8 @@
     "2106218675883888981"
    ],
    "baselined": true,
-   "last_checked_tick": 13785,
-   "last_checked_at": 1793502925.572273,
+   "last_checked_tick": 13788,
+   "last_checked_at": 1793503828.833204,
    "fail_streak": 0
   },
   "x_hmnews_info": {
@@ -257,8 +257,8 @@
     "2104923527778636046"
    ],
    "baselined": true,
-   "last_checked_tick": 13785,
-   "last_checked_at": 1793502925.572273,
+   "last_checked_tick": 13788,
+   "last_checked_at": 1793503828.833204,
    "fail_streak": 0
   },
   "x_elekashi_ofcl": {
@@ -295,8 +295,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 13787,
-   "last_checked_at": 1793503525.893029,
+   "last_checked_tick": 13788,
+   "last_checked_at": 1793503828.833204,
    "fail_streak": 0
   },
   "site_ek": {
@@ -327,8 +327,8 @@
     "91ee995979bebb7b"
    ],
    "baselined": true,
-   "last_checked_tick": 13785,
-   "last_checked_at": 1793502925.572273,
+   "last_checked_tick": 13788,
+   "last_checked_at": 1793503828.833204,
    "fail_streak": 0
   },
   "site_ekfc": {
@@ -365,8 +365,8 @@
     "425"
    ],
    "baselined": true,
-   "last_checked_tick": 13785,
-   "last_checked_at": 1793502925.572273,
+   "last_checked_tick": 13788,
+   "last_checked_at": 1793503828.833204,
    "fail_streak": 0
   },
   "site_elephantsinc": {
@@ -378,8 +378,8 @@
     "news202609"
    ],
    "baselined": true,
-   "last_checked_tick": 13785,
-   "last_checked_at": 1793502925.572273,
+   "last_checked_tick": 13788,
+   "last_checked_at": 1793503828.833204,
    "fail_streak": 0
   },
   "ig_post": {
@@ -479,48 +479,38 @@
     "DfJ8xrnEm61"
    ],
    "baselined": true,
-   "last_checked_tick": 13786,
-   "last_checked_at": 1793503223.09915,
+   "last_checked_tick": 13788,
+   "last_checked_at": 1793503828.833204,
    "fail_streak": 0
   }
  },
- "tick": 13787,
+ "tick": 13788,
  "last_sweep_hour": "2026-11-01T03",
  "ig_anon_proxies": [
   {
-   "proxy": "102.164.252.150:8080",
-   "ok_at": 1793502055.3630729,
-   "fails": 2
-  },
-  {
    "proxy": "103.155.198.138:3125",
-   "ok_at": 1793501445.3635824,
-   "fails": 2
-  },
-  {
-   "proxy": "38.51.232.54:999",
-   "ok_at": 1793501445.363586,
-   "fails": 2
+   "ok_at": 1793503866.034534,
+   "fails": 0
   },
   {
    "proxy": "200.59.191.137:999",
    "ok_at": 1793502640.0928125,
-   "fails": 1
+   "fails": 2
   },
   {
    "proxy": "186.96.111.214:999",
    "ok_at": 1793503264.9494817,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "14.241.133.207:8080",
    "ok_at": 1793503264.9494848,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "103.148.44.139:8080",
    "ok_at": 1793503272.239296,
-   "fails": 0
+   "fails": 1
   }
  ],
  "ig_story_routes": {
