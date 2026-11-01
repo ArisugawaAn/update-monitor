@@ -109,8 +109,8 @@
     "2116486915247755719"
    ],
    "baselined": true,
-   "last_checked_tick": 13864,
-   "last_checked_at": 1793526327.463085,
+   "last_checked_tick": 13865,
+   "last_checked_at": 1793526626.918608,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -148,8 +148,8 @@
     "SLZCAXzrZQo"
    ],
    "baselined": true,
-   "last_checked_tick": 13863,
-   "last_checked_at": 1793526026.857562,
+   "last_checked_tick": 13865,
+   "last_checked_at": 1793526626.918608,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -172,8 +172,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 13863,
-   "last_checked_at": 1793526026.857562,
+   "last_checked_tick": 13865,
+   "last_checked_at": 1793526626.918608,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -201,8 +201,8 @@
     "count-15"
    ],
    "baselined": true,
-   "last_checked_tick": 13863,
-   "last_checked_at": 1793526026.857562,
+   "last_checked_tick": 13865,
+   "last_checked_at": 1793526626.918608,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -295,8 +295,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 13864,
-   "last_checked_at": 1793526327.463085,
+   "last_checked_tick": 13865,
+   "last_checked_at": 1793526626.918608,
    "fail_streak": 0
   },
   "site_ek": {
@@ -479,48 +479,58 @@
     "DfJ8xrnEm61"
    ],
    "baselined": true,
-   "last_checked_tick": 13863,
-   "last_checked_at": 1793526026.857562,
+   "last_checked_tick": 13865,
+   "last_checked_at": 1793526626.918608,
    "fail_streak": 0
   }
  },
- "tick": 13864,
+ "tick": 13865,
  "last_sweep_hour": "2026-11-01T09",
  "ig_anon_proxies": [
   {
-   "proxy": "109.224.242.21:8080",
-   "ok_at": 1793523658.1076818,
-   "fails": 2
-  },
-  {
    "proxy": "185.82.99.204:92",
    "ok_at": 1793524275.1963923,
-   "fails": 1
+   "fails": 2
   },
   {
    "proxy": "103.172.42.111:1111",
    "ok_at": 1793524275.196398,
-   "fails": 1
+   "fails": 2
   },
   {
    "proxy": "201.4.69.45:8080",
    "ok_at": 1793526056.1022332,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "103.173.162.49:8818",
    "ok_at": 1793524872.25662,
-   "fails": 1
+   "fails": 2
   },
   {
    "proxy": "103.41.97.225:83",
    "ok_at": 1793524872.2566228,
-   "fails": 1
+   "fails": 2
   },
   {
    "proxy": "201.7.31.181:8080",
    "ok_at": 1793525438.7846217,
-   "fails": 1
+   "fails": 2
+  },
+  {
+   "proxy": "160.22.198.19:8082",
+   "ok_at": 1793526667.2492979,
+   "fails": 0
+  },
+  {
+   "proxy": "122.54.120.79:8080",
+   "ok_at": 1793526667.2493017,
+   "fails": 0
+  },
+  {
+   "proxy": "153.56.248.169:8080",
+   "ok_at": 1793526671.9830682,
+   "fails": 0
   }
  ],
  "ig_story_routes": {
