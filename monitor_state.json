@@ -109,8 +109,8 @@
     "2116486915247755719"
    ],
    "baselined": true,
-   "last_checked_tick": 13844,
-   "last_checked_at": 1793520326.90264,
+   "last_checked_tick": 13845,
+   "last_checked_at": 1793520626.261187,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -148,8 +148,8 @@
     "SLZCAXzrZQo"
    ],
    "baselined": true,
-   "last_checked_tick": 13843,
-   "last_checked_at": 1793520026.804818,
+   "last_checked_tick": 13845,
+   "last_checked_at": 1793520626.261187,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -172,8 +172,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 13843,
-   "last_checked_at": 1793520026.804818,
+   "last_checked_tick": 13845,
+   "last_checked_at": 1793520626.261187,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -201,8 +201,8 @@
     "count-15"
    ],
    "baselined": true,
-   "last_checked_tick": 13843,
-   "last_checked_at": 1793520026.804818,
+   "last_checked_tick": 13845,
+   "last_checked_at": 1793520626.261187,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -295,8 +295,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 13844,
-   "last_checked_at": 1793520326.90264,
+   "last_checked_tick": 13845,
+   "last_checked_at": 1793520626.261187,
    "fail_streak": 0
   },
   "site_ek": {
@@ -479,18 +479,18 @@
     "DfJ8xrnEm61"
    ],
    "baselined": true,
-   "last_checked_tick": 13843,
-   "last_checked_at": 1793520026.804818,
+   "last_checked_tick": 13845,
+   "last_checked_at": 1793520626.261187,
    "fail_streak": 0
   }
  },
- "tick": 13844,
+ "tick": 13845,
  "last_sweep_hour": "2026-11-01T08",
  "ig_anon_proxies": [
   {
    "proxy": "41.128.90.51:1981",
-   "ok_at": 1793519763.9469001,
-   "fails": 1
+   "ok_at": 1793520640.3964915,
+   "fails": 0
   },
   {
    "proxy": "160.19.19.102:8080",
@@ -505,7 +505,7 @@
   {
    "proxy": "163.61.225.180:1111",
    "ok_at": 1793520038.7052984,
-   "fails": 0
+   "fails": 1
   }
  ],
  "ig_story_routes": {
