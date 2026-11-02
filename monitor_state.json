@@ -109,8 +109,8 @@
     "2116486915247755719"
    ],
    "baselined": true,
-   "last_checked_tick": 14117,
-   "last_checked_at": 1793601360.431283,
+   "last_checked_tick": 14118,
+   "last_checked_at": 1793601658.983164,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -150,8 +150,8 @@
     "XmDEYCqDtoA"
    ],
    "baselined": true,
-   "last_checked_tick": 14116,
-   "last_checked_at": 1793601061.221022,
+   "last_checked_tick": 14118,
+   "last_checked_at": 1793601658.983164,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -174,8 +174,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 14116,
-   "last_checked_at": 1793601061.221022,
+   "last_checked_tick": 14118,
+   "last_checked_at": 1793601658.983164,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -205,8 +205,8 @@
     "count-16"
    ],
    "baselined": true,
-   "last_checked_tick": 14116,
-   "last_checked_at": 1793601061.221022,
+   "last_checked_tick": 14118,
+   "last_checked_at": 1793601658.983164,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -299,8 +299,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 14117,
-   "last_checked_at": 1793601360.431283,
+   "last_checked_tick": 14118,
+   "last_checked_at": 1793601658.983164,
    "fail_streak": 0
   },
   "site_ek": {
@@ -483,12 +483,12 @@
     "DfJ8xrnEm61"
    ],
    "baselined": true,
-   "last_checked_tick": 14116,
-   "last_checked_at": 1793601061.221022,
+   "last_checked_tick": 14118,
+   "last_checked_at": 1793601658.983164,
    "fail_streak": 0
   }
  },
- "tick": 14117,
+ "tick": 14118,
  "last_sweep_hour": "2026-11-02T06",
  "ig_anon_proxies": [
   {
@@ -498,7 +498,7 @@
   },
   {
    "proxy": "38.211.76.201:999",
-   "ok_at": 1793601064.3490832,
+   "ok_at": 1793601672.4439726,
    "fails": 0
   },
   {
@@ -514,7 +514,7 @@
   {
    "proxy": "203.175.102.214:8080",
    "ok_at": 1793601069.7981858,
-   "fails": 0
+   "fails": 1
   }
  ],
  "ig_story_routes": {
