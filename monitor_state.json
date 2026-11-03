@@ -113,8 +113,8 @@
     "2117542828930986176"
    ],
    "baselined": true,
-   "last_checked_tick": 14613,
-   "last_checked_at": 1793748963.638867,
+   "last_checked_tick": 14614,
+   "last_checked_at": 1793749267.38708,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -156,8 +156,8 @@
     "sJ0H0ukh2RM"
    ],
    "baselined": true,
-   "last_checked_tick": 14612,
-   "last_checked_at": 1793748655.670768,
+   "last_checked_tick": 14614,
+   "last_checked_at": 1793749267.38708,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -180,8 +180,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 14612,
-   "last_checked_at": 1793748655.670768,
+   "last_checked_tick": 14614,
+   "last_checked_at": 1793749267.38708,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -213,8 +213,8 @@
     "count-17"
    ],
    "baselined": true,
-   "last_checked_tick": 14612,
-   "last_checked_at": 1793748655.670768,
+   "last_checked_tick": 14614,
+   "last_checked_at": 1793749267.38708,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -307,8 +307,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 14613,
-   "last_checked_at": 1793748963.638867,
+   "last_checked_tick": 14614,
+   "last_checked_at": 1793749267.38708,
    "fail_streak": 0
   },
   "site_ek": {
@@ -491,18 +491,18 @@
     "DfJ8xrnEm61"
    ],
    "baselined": true,
-   "last_checked_tick": 14612,
-   "last_checked_at": 1793748655.670768,
+   "last_checked_tick": 14614,
+   "last_checked_at": 1793749267.38708,
    "fail_streak": 0
   }
  },
- "tick": 14613,
+ "tick": 14614,
  "last_sweep_hour": "2026-11-03T23",
  "ig_anon_proxies": [
   {
    "proxy": "82.152.138.127:999",
-   "ok_at": 1793746863.8734288,
-   "fails": 1
+   "ok_at": 1793749281.4284616,
+   "fails": 0
   },
   {
    "proxy": "45.174.243.232:999",
@@ -522,7 +522,7 @@
   {
    "proxy": "187.102.219.34:999",
    "ok_at": 1793748664.043694,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "38.63.117.65:999",
