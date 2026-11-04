@@ -113,8 +113,8 @@
     "2117542828930986176"
    ],
    "baselined": true,
-   "last_checked_tick": 14809,
-   "last_checked_at": 1793808370.593483,
+   "last_checked_tick": 14810,
+   "last_checked_at": 1793808685.417896,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -156,8 +156,8 @@
     "sJ0H0ukh2RM"
    ],
    "baselined": true,
-   "last_checked_tick": 14808,
-   "last_checked_at": 1793808073.409467,
+   "last_checked_tick": 14810,
+   "last_checked_at": 1793808685.417896,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -180,8 +180,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 14808,
-   "last_checked_at": 1793808073.409467,
+   "last_checked_tick": 14810,
+   "last_checked_at": 1793808685.417896,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -213,8 +213,8 @@
     "count-17"
    ],
    "baselined": true,
-   "last_checked_tick": 14808,
-   "last_checked_at": 1793808073.409467,
+   "last_checked_tick": 14810,
+   "last_checked_at": 1793808685.417896,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -307,9 +307,9 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 14809,
-   "last_checked_at": 1793808370.593483,
-   "fail_streak": 2
+   "last_checked_tick": 14810,
+   "last_checked_at": 1793808685.417896,
+   "fail_streak": 0
   },
   "site_ek": {
    "seen": [
@@ -493,12 +493,12 @@
     "DfJ8xrnEm61"
    ],
    "baselined": true,
-   "last_checked_tick": 14808,
-   "last_checked_at": 1793808073.409467,
+   "last_checked_tick": 14810,
+   "last_checked_at": 1793808685.417896,
    "fail_streak": 0
   }
  },
- "tick": 14809,
+ "tick": 14810,
  "last_sweep_hour": "2026-11-04T16",
  "ig_anon_proxies": [
   {
@@ -523,18 +523,18 @@
   },
   {
    "proxy": "103.19.58.139:8080",
-   "ok_at": 1793808104.3553054,
+   "ok_at": 1793808705.365369,
    "fails": 0
   },
   {
    "proxy": "103.36.9.9:8181",
    "ok_at": 1793808104.355309,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "103.24.214.169:8081",
    "ok_at": 1793808110.927166,
-   "fails": 0
+   "fails": 1
   }
  ],
  "ig_story_routes": {
