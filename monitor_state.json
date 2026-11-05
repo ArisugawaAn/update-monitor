@@ -113,8 +113,8 @@
     "2117542828930986176"
    ],
    "baselined": true,
-   "last_checked_tick": 15185,
-   "last_checked_at": 1793920571.616618,
+   "last_checked_tick": 15186,
+   "last_checked_at": 1793921173.017622,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -156,8 +156,8 @@
     "sJ0H0ukh2RM"
    ],
    "baselined": true,
-   "last_checked_tick": 15184,
-   "last_checked_at": 1793920270.6646,
+   "last_checked_tick": 15186,
+   "last_checked_at": 1793921173.017622,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -180,8 +180,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 15184,
-   "last_checked_at": 1793920270.6646,
+   "last_checked_tick": 15186,
+   "last_checked_at": 1793921173.017622,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -213,8 +213,8 @@
     "count-17"
    ],
    "baselined": true,
-   "last_checked_tick": 15184,
-   "last_checked_at": 1793920270.6646,
+   "last_checked_tick": 15186,
+   "last_checked_at": 1793921173.017622,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -307,8 +307,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 15185,
-   "last_checked_at": 1793920571.616618,
+   "last_checked_tick": 15186,
+   "last_checked_at": 1793921173.017622,
    "fail_streak": 0
   },
   "site_ek": {
@@ -497,28 +497,28 @@
     "story-1793916660"
    ],
    "baselined": true,
-   "last_checked_tick": 15184,
-   "last_checked_at": 1793920270.6646,
-   "fail_streak": 0
+   "last_checked_tick": 15186,
+   "last_checked_at": 1793921173.017622,
+   "fail_streak": 1
   }
  },
- "tick": 15185,
+ "tick": 15186,
  "last_sweep_hour": "2026-11-05T23",
  "ig_anon_proxies": [
   {
    "proxy": "103.10.231.189:8080",
    "ok_at": 1793920291.9620972,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "38.171.255.232:999",
    "ok_at": 1793919727.823008,
-   "fails": 1
+   "fails": 2
   },
   {
    "proxy": "189.148.34.54:8080",
    "ok_at": 1793919730.5353026,
-   "fails": 1
+   "fails": 2
   }
  ],
  "ig_story_routes": {
