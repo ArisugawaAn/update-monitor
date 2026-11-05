@@ -113,8 +113,8 @@
     "2117542828930986176"
    ],
    "baselined": true,
-   "last_checked_tick": 14918,
-   "last_checked_at": 1793840772.715251,
+   "last_checked_tick": 14919,
+   "last_checked_at": 1793841084.386299,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -156,8 +156,8 @@
     "sJ0H0ukh2RM"
    ],
    "baselined": true,
-   "last_checked_tick": 14917,
-   "last_checked_at": 1793840472.967954,
+   "last_checked_tick": 14919,
+   "last_checked_at": 1793841084.386299,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -180,8 +180,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 14917,
-   "last_checked_at": 1793840472.967954,
+   "last_checked_tick": 14919,
+   "last_checked_at": 1793841084.386299,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -213,8 +213,8 @@
     "count-17"
    ],
    "baselined": true,
-   "last_checked_tick": 14917,
-   "last_checked_at": 1793840472.967954,
+   "last_checked_tick": 14919,
+   "last_checked_at": 1793841084.386299,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -307,8 +307,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 14918,
-   "last_checked_at": 1793840772.715251,
+   "last_checked_tick": 14919,
+   "last_checked_at": 1793841084.386299,
    "fail_streak": 0
   },
   "site_ek": {
@@ -493,12 +493,12 @@
     "DfJ8xrnEm61"
    ],
    "baselined": true,
-   "last_checked_tick": 14917,
-   "last_checked_at": 1793840472.967954,
+   "last_checked_tick": 14919,
+   "last_checked_at": 1793841084.386299,
    "fail_streak": 0
   }
  },
- "tick": 14918,
+ "tick": 14919,
  "last_sweep_hour": "2026-11-05T01",
  "ig_anon_proxies": [
   {
@@ -508,8 +508,8 @@
   },
   {
    "proxy": "160.19.146.76:2022",
-   "ok_at": 1793837480.9139066,
-   "fails": 1
+   "ok_at": 1793841116.3890018,
+   "fails": 0
   },
   {
    "proxy": "188.132.150.249:8080",
@@ -519,16 +519,11 @@
   {
    "proxy": "98.154.21.253:4228",
    "ok_at": 1793840486.8536808,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "213.131.85.26:1981",
    "ok_at": 1793839875.1682985,
-   "fails": 1
-  },
-  {
-   "proxy": "203.205.33.131:1452",
-   "ok_at": 1793838110.0802617,
    "fails": 2
   }
  ],
