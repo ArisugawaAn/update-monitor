@@ -113,8 +113,8 @@
     "2117542828930986176"
    ],
    "baselined": true,
-   "last_checked_tick": 15022,
-   "last_checked_at": 1793871971.8339,
+   "last_checked_tick": 15023,
+   "last_checked_at": 1793872270.545602,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -156,8 +156,8 @@
     "sJ0H0ukh2RM"
    ],
    "baselined": true,
-   "last_checked_tick": 15021,
-   "last_checked_at": 1793871602.635563,
+   "last_checked_tick": 15023,
+   "last_checked_at": 1793872270.545602,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -180,8 +180,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 15021,
-   "last_checked_at": 1793871602.635563,
+   "last_checked_tick": 15023,
+   "last_checked_at": 1793872270.545602,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -213,8 +213,8 @@
     "count-17"
    ],
    "baselined": true,
-   "last_checked_tick": 15021,
-   "last_checked_at": 1793871602.635563,
+   "last_checked_tick": 15023,
+   "last_checked_at": 1793872270.545602,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -307,8 +307,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 15022,
-   "last_checked_at": 1793871971.8339,
+   "last_checked_tick": 15023,
+   "last_checked_at": 1793872270.545602,
    "fail_streak": 0
   },
   "site_ek": {
@@ -493,22 +493,32 @@
     "DfJ8xrnEm61"
    ],
    "baselined": true,
-   "last_checked_tick": 15021,
-   "last_checked_at": 1793871602.635563,
+   "last_checked_tick": 15023,
+   "last_checked_at": 1793872270.545602,
    "fail_streak": 0
   }
  },
- "tick": 15022,
+ "tick": 15023,
  "last_sweep_hour": "2026-11-05T09",
  "ig_anon_proxies": [
   {
    "proxy": "89.43.133.116:8080",
    "ok_at": 1793871643.5064678,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "205.209.64.141:8080",
    "ok_at": 1793871685.1154227,
+   "fails": 1
+  },
+  {
+   "proxy": "198.15.30.122:8080",
+   "ok_at": 1793872307.6099262,
+   "fails": 0
+  },
+  {
+   "proxy": "163.52.18.234:8087",
+   "ok_at": 1793872314.9599066,
    "fails": 0
   }
  ],
