@@ -117,9 +117,9 @@
     "2119716982786560043"
    ],
    "baselined": true,
-   "last_checked_tick": 16771,
-   "last_checked_at": 1794395159.83616,
-   "fail_streak": 2
+   "last_checked_tick": 16772,
+   "last_checked_at": 1794395459.160515,
+   "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
    "seen": [
@@ -162,8 +162,8 @@
     "Jj_HVEZ3bUQ"
    ],
    "baselined": true,
-   "last_checked_tick": 16770,
-   "last_checked_at": 1794394860.207162,
+   "last_checked_tick": 16772,
+   "last_checked_at": 1794395459.160515,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -186,8 +186,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 16770,
-   "last_checked_at": 1794394860.207162,
+   "last_checked_tick": 16772,
+   "last_checked_at": 1794395459.160515,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -221,8 +221,8 @@
     "count-19"
    ],
    "baselined": true,
-   "last_checked_tick": 16770,
-   "last_checked_at": 1794394860.207162,
+   "last_checked_tick": 16772,
+   "last_checked_at": 1794395459.160515,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -315,8 +315,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 16771,
-   "last_checked_at": 1794395159.83616,
+   "last_checked_tick": 16772,
+   "last_checked_at": 1794395459.160515,
    "fail_streak": 0
   },
   "site_ek": {
@@ -511,12 +511,12 @@
     "DfZIj3wyBn3"
    ],
    "baselined": true,
-   "last_checked_tick": 16770,
-   "last_checked_at": 1794394860.207162,
+   "last_checked_tick": 16772,
+   "last_checked_at": 1794395459.160515,
    "fail_streak": 0
   }
  },
- "tick": 16771,
+ "tick": 16772,
  "last_sweep_hour": "2026-11-11T11",
  "ig_anon_proxies": [
   {
@@ -536,17 +536,17 @@
   },
   {
    "proxy": "200.52.148.212:999",
-   "ok_at": 1794394892.9296906,
+   "ok_at": 1794395478.4054573,
    "fails": 0
   },
   {
    "proxy": "172.233.39.76:8080",
    "ok_at": 1794394892.9296942,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "103.174.122.4:3128",
-   "ok_at": 1794394898.212428,
+   "ok_at": 1794395467.493219,
    "fails": 0
   }
  ],
