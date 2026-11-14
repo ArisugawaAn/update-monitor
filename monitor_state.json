@@ -119,8 +119,8 @@
     "2120803793826984242"
    ],
    "baselined": true,
-   "last_checked_tick": 17601,
-   "last_checked_at": 1794645924.606325,
+   "last_checked_tick": 17602,
+   "last_checked_at": 1794646228.164663,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -164,8 +164,8 @@
     "Jj_HVEZ3bUQ"
    ],
    "baselined": true,
-   "last_checked_tick": 17600,
-   "last_checked_at": 1794645627.235709,
+   "last_checked_tick": 17602,
+   "last_checked_at": 1794646228.164663,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -188,8 +188,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 17600,
-   "last_checked_at": 1794645627.235709,
+   "last_checked_tick": 17602,
+   "last_checked_at": 1794646228.164663,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -223,8 +223,8 @@
     "count-19"
    ],
    "baselined": true,
-   "last_checked_tick": 17600,
-   "last_checked_at": 1794645627.235709,
+   "last_checked_tick": 17602,
+   "last_checked_at": 1794646228.164663,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -317,8 +317,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 17601,
-   "last_checked_at": 1794645924.606325,
+   "last_checked_tick": 17602,
+   "last_checked_at": 1794646228.164663,
    "fail_streak": 0
   },
   "site_ek": {
@@ -519,12 +519,12 @@
     "story-1794556415"
    ],
    "baselined": true,
-   "last_checked_tick": 17600,
-   "last_checked_at": 1794645627.235709,
+   "last_checked_tick": 17602,
+   "last_checked_at": 1794646228.164663,
    "fail_streak": 0
   }
  },
- "tick": 17601,
+ "tick": 17602,
  "last_sweep_hour": "2026-11-14T08",
  "ig_anon_proxies": [
   {
@@ -540,7 +540,7 @@
   {
    "proxy": "49.229.100.235:8080",
    "ok_at": 1794645636.4504604,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "210.87.93.42:8080",
@@ -559,8 +559,8 @@
   },
   {
    "proxy": "90.156.160.234:3128",
-   "ok_at": 1794642681.1386,
-   "fails": 1
+   "ok_at": 1794646255.7780244,
+   "fails": 0
   }
  ],
  "ig_story_routes": {
