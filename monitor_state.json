@@ -119,8 +119,8 @@
     "2120803793826984242"
    ],
    "baselined": true,
-   "last_checked_tick": 17898,
-   "last_checked_at": 1794734122.771041,
+   "last_checked_tick": 17899,
+   "last_checked_at": 1794734427.78584,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -166,8 +166,8 @@
     "UiKkNLzgnsI"
    ],
    "baselined": true,
-   "last_checked_tick": 17897,
-   "last_checked_at": 1794733823.628,
+   "last_checked_tick": 17899,
+   "last_checked_at": 1794734427.78584,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -190,8 +190,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 17897,
-   "last_checked_at": 1794733823.628,
+   "last_checked_tick": 17899,
+   "last_checked_at": 1794734427.78584,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -227,8 +227,8 @@
     "count-20"
    ],
    "baselined": true,
-   "last_checked_tick": 17897,
-   "last_checked_at": 1794733823.628,
+   "last_checked_tick": 17899,
+   "last_checked_at": 1794734427.78584,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -321,8 +321,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 17898,
-   "last_checked_at": 1794734122.771041,
+   "last_checked_tick": 17899,
+   "last_checked_at": 1794734427.78584,
    "fail_streak": 0
   },
   "site_ek": {
@@ -509,7 +509,9 @@
     "story-1793926730",
     "story-1793927265",
     "DfZIj3wyBn3",
-    "story-1794556415"
+    "story-1794556415",
+    "story-1794734247",
+    "DfwcRyryek_"
    ],
    "notified": [
     "story-1792823116",
@@ -520,15 +522,17 @@
     "story-1793926730",
     "story-1793927265",
     "DfZIj3wyBn3",
-    "story-1794556415"
+    "story-1794556415",
+    "story-1794734247",
+    "DfwcRyryek_"
    ],
    "baselined": true,
-   "last_checked_tick": 17897,
-   "last_checked_at": 1794733823.628,
+   "last_checked_tick": 17899,
+   "last_checked_at": 1794734427.78584,
    "fail_streak": 0
   }
  },
- "tick": 17898,
+ "tick": 17899,
  "last_sweep_hour": "2026-11-15T09",
  "ig_anon_proxies": [
   {
@@ -553,7 +557,7 @@
   },
   {
    "proxy": "102.215.79.167:8080",
-   "ok_at": 1794733839.278458,
+   "ok_at": 1794734439.7899015,
    "fails": 0
   },
   {
