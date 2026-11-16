@@ -125,8 +125,8 @@
     "2121894479477305810"
    ],
    "baselined": true,
-   "last_checked_tick": 18205,
-   "last_checked_at": 1794825377.8493,
+   "last_checked_tick": 18206,
+   "last_checked_at": 1794825671.611993,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -174,8 +174,8 @@
     "S0h2x_xaJDI"
    ],
    "baselined": true,
-   "last_checked_tick": 18204,
-   "last_checked_at": 1794825068.12796,
+   "last_checked_tick": 18206,
+   "last_checked_at": 1794825671.611993,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -198,8 +198,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 18204,
-   "last_checked_at": 1794825068.12796,
+   "last_checked_tick": 18206,
+   "last_checked_at": 1794825671.611993,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -239,8 +239,8 @@
     "count-22"
    ],
    "baselined": true,
-   "last_checked_tick": 18204,
-   "last_checked_at": 1794825068.12796,
+   "last_checked_tick": 18206,
+   "last_checked_at": 1794825671.611993,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -333,8 +333,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 18205,
-   "last_checked_at": 1794825377.8493,
+   "last_checked_tick": 18206,
+   "last_checked_at": 1794825671.611993,
    "fail_streak": 0
   },
   "site_ek": {
@@ -541,18 +541,18 @@
     "story-1794734650"
    ],
    "baselined": true,
-   "last_checked_tick": 18204,
-   "last_checked_at": 1794825068.12796,
+   "last_checked_tick": 18206,
+   "last_checked_at": 1794825671.611993,
    "fail_streak": 0
   }
  },
- "tick": 18205,
+ "tick": 18206,
  "last_sweep_hour": "2026-11-16T10",
  "ig_anon_proxies": [
   {
    "proxy": "181.78.195.137:999",
    "ok_at": 1794825081.375479,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "124.105.3.173:5051",
@@ -561,8 +561,8 @@
   },
   {
    "proxy": "188.132.150.240:8080",
-   "ok_at": 1794824490.7747052,
-   "fails": 1
+   "ok_at": 1794825685.1144428,
+   "fails": 0
   },
   {
    "proxy": "112.78.134.134:7777",
