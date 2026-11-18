@@ -125,8 +125,8 @@
     "2121894479477305810"
    ],
    "baselined": true,
-   "last_checked_tick": 18664,
-   "last_checked_at": 1794962747.886975,
+   "last_checked_tick": 18665,
+   "last_checked_at": 1794963061.645709,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -176,8 +176,8 @@
     "YMR3a28slQc"
    ],
    "baselined": true,
-   "last_checked_tick": 18663,
-   "last_checked_at": 1794962448.256134,
+   "last_checked_tick": 18665,
+   "last_checked_at": 1794963061.645709,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -200,8 +200,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 18663,
-   "last_checked_at": 1794962448.256134,
+   "last_checked_tick": 18665,
+   "last_checked_at": 1794963061.645709,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -241,8 +241,8 @@
     "count-22"
    ],
    "baselined": true,
-   "last_checked_tick": 18663,
-   "last_checked_at": 1794962448.256134,
+   "last_checked_tick": 18665,
+   "last_checked_at": 1794963061.645709,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -335,8 +335,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 18664,
-   "last_checked_at": 1794962747.886975,
+   "last_checked_tick": 18665,
+   "last_checked_at": 1794963061.645709,
    "fail_streak": 0
   },
   "site_ek": {
@@ -543,12 +543,12 @@
     "story-1794734650"
    ],
    "baselined": true,
-   "last_checked_tick": 18663,
-   "last_checked_at": 1794962448.256134,
+   "last_checked_tick": 18665,
+   "last_checked_at": 1794963061.645709,
    "fail_streak": 0
   }
  },
- "tick": 18664,
+ "tick": 18665,
  "last_sweep_hour": "2026-11-18T00",
  "ig_anon_proxies": [
   {
@@ -559,12 +559,12 @@
   {
    "proxy": "103.116.49.115:8080",
    "ok_at": 1794962468.111195,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "38.103.250.121:8080",
-   "ok_at": 1794961863.0447369,
-   "fails": 1
+   "ok_at": 1794963079.3945854,
+   "fails": 0
   },
   {
    "proxy": "85.117.56.66:8080",
