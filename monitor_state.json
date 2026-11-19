@@ -32,8 +32,8 @@
     "36b62065d429a45f"
    ],
    "baselined": true,
-   "last_checked_tick": 19070,
-   "last_checked_at": 1795083188.625223,
+   "last_checked_tick": 19073,
+   "last_checked_at": 1795083966.529356,
    "fail_streak": 0
   },
   "ig_story": {
@@ -125,8 +125,8 @@
     "2121894479477305810"
    ],
    "baselined": true,
-   "last_checked_tick": 19072,
-   "last_checked_at": 1795083671.161248,
+   "last_checked_tick": 19073,
+   "last_checked_at": 1795083966.529356,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -176,8 +176,8 @@
     "YMR3a28slQc"
    ],
    "baselined": true,
-   "last_checked_tick": 19071,
-   "last_checked_at": 1795083369.353892,
+   "last_checked_tick": 19073,
+   "last_checked_at": 1795083966.529356,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -200,8 +200,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 19071,
-   "last_checked_at": 1795083369.353892,
+   "last_checked_tick": 19073,
+   "last_checked_at": 1795083966.529356,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -241,8 +241,8 @@
     "count-22"
    ],
    "baselined": true,
-   "last_checked_tick": 19071,
-   "last_checked_at": 1795083369.353892,
+   "last_checked_tick": 19073,
+   "last_checked_at": 1795083966.529356,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -265,8 +265,8 @@
     "2106218675883888981"
    ],
    "baselined": true,
-   "last_checked_tick": 19070,
-   "last_checked_at": 1795083188.625223,
+   "last_checked_tick": 19073,
+   "last_checked_at": 1795083966.529356,
    "fail_streak": 0
   },
   "x_hmnews_info": {
@@ -297,8 +297,8 @@
     "2104923527778636046"
    ],
    "baselined": true,
-   "last_checked_tick": 19070,
-   "last_checked_at": 1795083188.625223,
+   "last_checked_tick": 19073,
+   "last_checked_at": 1795083966.529356,
    "fail_streak": 0
   },
   "x_elekashi_ofcl": {
@@ -335,8 +335,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 19072,
-   "last_checked_at": 1795083671.161248,
+   "last_checked_tick": 19073,
+   "last_checked_at": 1795083966.529356,
    "fail_streak": 0
   },
   "site_ek": {
@@ -367,8 +367,8 @@
     "91ee995979bebb7b"
    ],
    "baselined": true,
-   "last_checked_tick": 19070,
-   "last_checked_at": 1795083188.625223,
+   "last_checked_tick": 19073,
+   "last_checked_at": 1795083966.529356,
    "fail_streak": 0
   },
   "site_ekfc": {
@@ -411,8 +411,8 @@
     "428"
    ],
    "baselined": true,
-   "last_checked_tick": 19070,
-   "last_checked_at": 1795083188.625223,
+   "last_checked_tick": 19073,
+   "last_checked_at": 1795083966.529356,
    "fail_streak": 0
   },
   "site_elephantsinc": {
@@ -428,8 +428,8 @@
     "news20261118"
    ],
    "baselined": true,
-   "last_checked_tick": 19070,
-   "last_checked_at": 1795083188.625223,
+   "last_checked_tick": 19073,
+   "last_checked_at": 1795083966.529356,
    "fail_streak": 0
   },
   "ig_post": {
@@ -547,38 +547,38 @@
     "story-1794734650"
    ],
    "baselined": true,
-   "last_checked_tick": 19071,
-   "last_checked_at": 1795083369.353892,
+   "last_checked_tick": 19073,
+   "last_checked_at": 1795083966.529356,
    "fail_streak": 0
   }
  },
- "tick": 19072,
+ "tick": 19073,
  "last_sweep_hour": "2026-11-19T10",
  "ig_anon_proxies": [
   {
    "proxy": "61.91.162.126:8080",
    "ok_at": 1795083377.6624777,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "103.176.96.82:8082",
    "ok_at": 1795082483.6237547,
-   "fails": 1
-  },
-  {
-   "proxy": "103.18.78.135:8080",
-   "ok_at": 1795080109.1823568,
    "fails": 2
   },
   {
-   "proxy": "206.135.80.194:999",
-   "ok_at": 1795080109.1823606,
-   "fails": 2
+   "proxy": "103.18.78.228:1080",
+   "ok_at": 1795084001.120925,
+   "fails": 0
   },
   {
-   "proxy": "180.195.99.168:8081",
-   "ok_at": 1795080679.3389676,
-   "fails": 2
+   "proxy": "223.25.110.250:8088",
+   "ok_at": 1795084001.1209292,
+   "fails": 0
+  },
+  {
+   "proxy": "177.12.140.107:8080",
+   "ok_at": 1795084005.3662555,
+   "fails": 0
   }
  ],
  "ig_story_routes": {
