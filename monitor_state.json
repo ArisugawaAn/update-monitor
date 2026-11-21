@@ -127,8 +127,8 @@
     "2124125142356017393"
    ],
    "baselined": true,
-   "last_checked_tick": 19726,
-   "last_checked_at": 1795278973.60565,
+   "last_checked_tick": 19727,
+   "last_checked_at": 1795279262.373471,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -178,8 +178,8 @@
     "YMR3a28slQc"
    ],
    "baselined": true,
-   "last_checked_tick": 19725,
-   "last_checked_at": 1795278665.857752,
+   "last_checked_tick": 19727,
+   "last_checked_at": 1795279262.373471,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -202,8 +202,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 19725,
-   "last_checked_at": 1795278665.857752,
+   "last_checked_tick": 19727,
+   "last_checked_at": 1795279262.373471,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -243,8 +243,8 @@
     "count-22"
    ],
    "baselined": true,
-   "last_checked_tick": 19725,
-   "last_checked_at": 1795278665.857752,
+   "last_checked_tick": 19727,
+   "last_checked_at": 1795279262.373471,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -339,8 +339,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 19726,
-   "last_checked_at": 1795278973.60565,
+   "last_checked_tick": 19727,
+   "last_checked_at": 1795279262.373471,
    "fail_streak": 0
   },
   "site_ek": {
@@ -551,18 +551,18 @@
     "story-1794734650"
    ],
    "baselined": true,
-   "last_checked_tick": 19725,
-   "last_checked_at": 1795278665.857752,
+   "last_checked_tick": 19727,
+   "last_checked_at": 1795279262.373471,
    "fail_streak": 0
   }
  },
- "tick": 19726,
+ "tick": 19727,
  "last_sweep_hour": "2026-11-21T16",
  "ig_anon_proxies": [
   {
    "proxy": "128.0.7.188:8085",
    "ok_at": 1795278704.0031881,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "112.203.223.38:8082",
@@ -571,8 +571,8 @@
   },
   {
    "proxy": "103.66.62.177:8080",
-   "ok_at": 1795278087.4489653,
-   "fails": 1
+   "ok_at": 1795279279.4566545,
+   "fails": 0
   },
   {
    "proxy": "124.107.173.219:8082",
