@@ -129,8 +129,8 @@
     "2124796057502830883"
    ],
    "baselined": true,
-   "last_checked_tick": 21585,
-   "last_checked_at": 1795835145.914432,
+   "last_checked_tick": 21586,
+   "last_checked_at": 1795835444.255346,
    "fail_streak": 0
   },
   "youtube_UCcUcK64JLSZAPUfG07s-Wew": {
@@ -180,8 +180,8 @@
     "YMR3a28slQc"
    ],
    "baselined": true,
-   "last_checked_tick": 21584,
-   "last_checked_at": 1795834849.571482,
+   "last_checked_tick": 21586,
+   "last_checked_at": 1795835444.255346,
    "fail_streak": 0
   },
   "youtube_UCT9b7yx6qEl0q994k4s6IEw": {
@@ -204,8 +204,8 @@
    ],
    "notified": [],
    "baselined": true,
-   "last_checked_tick": 21584,
-   "last_checked_at": 1795834849.571482,
+   "last_checked_tick": 21586,
+   "last_checked_at": 1795835444.255346,
    "fail_streak": 0
   },
   "tiktok_miyamoto_hiroji_": {
@@ -245,8 +245,8 @@
     "count-22"
    ],
    "baselined": true,
-   "last_checked_tick": 21584,
-   "last_checked_at": 1795834849.571482,
+   "last_checked_tick": 21586,
+   "last_checked_at": 1795835444.255346,
    "fail_streak": 0
   },
   "x_paonews_info": {
@@ -341,8 +341,8 @@
     "2113153129428754695"
    ],
    "baselined": true,
-   "last_checked_tick": 21585,
-   "last_checked_at": 1795835145.914432,
+   "last_checked_tick": 21586,
+   "last_checked_at": 1795835444.255346,
    "fail_streak": 0
   },
   "site_ek": {
@@ -557,12 +557,12 @@
     "story-1795359025"
    ],
    "baselined": true,
-   "last_checked_tick": 21584,
-   "last_checked_at": 1795834849.571482,
+   "last_checked_tick": 21586,
+   "last_checked_at": 1795835444.255346,
    "fail_streak": 0
   }
  },
- "tick": 21585,
+ "tick": 21586,
  "last_sweep_hour": "2026-11-28T03",
  "ig_anon_proxies": [
   {
@@ -582,8 +582,8 @@
   },
   {
    "proxy": "102.203.101.155:8080",
-   "ok_at": 1795834284.4825416,
-   "fails": 1
+   "ok_at": 1795835458.7901008,
+   "fails": 0
   },
   {
    "proxy": "103.229.14.83:8080",
@@ -603,7 +603,7 @@
   {
    "proxy": "190.144.238.66:8080",
    "ok_at": 1795834864.7593868,
-   "fails": 0
+   "fails": 1
   },
   {
    "proxy": "126.209.13.2:8085",
